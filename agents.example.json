@@ -1,50 +1,98 @@
 {
   "_readme": [
-    "Copy this file to agents.json and edit it. Every agent needs: id, name, role, kind, seat, floor.",
-    "seat is [column, row] on the office grid. floor is 1 or 2.",
-    "kind is 'cli', 'api' or 'echo'. Set enabled:false to give an agent a desk but leave it dark.",
-    "All CLI commands below were verified against the official docs on 29 July 2026."
+    "Copy to agents.json (the server does this for you on first run) and edit freely.",
+    "kind: 'cli' (spawns a coding CLI) | 'api' (Anthropic/OpenAI chat) | 'echo' (offline stub, no keys).",
+    "You can rename agents and move them between floors from the in-game phone — those changes save to data/overrides.json and survive restarts.",
+    "floor: 1, 2 or 3. seat is optional; the office seats people automatically.",
+    "hair: dark | fade | long | curly | short | cap | mint | pink | silver",
+    "All CLI commands here were verified against the official docs on 29 July 2026."
   ],
-
   "agents": [
     {
+      "id": "aside",
+      "name": "ASIDE",
+      "role": "Chief of staff",
+      "kind": "api",
+      "floor": 1,
+      "seat": [
+        2,
+        2
+      ],
+      "shirt": "#4ade80",
+      "hair": "dark",
+      "persona": "You are Aside, Jack's chief of staff and the agent who built this office. Jack is 13, in Toronto, and ships real products: Iris (a macOS eye-rest app, $35 one time), Ziggy's Critters (a kids' game), Alpine (submitted to Y Combinator), Orbit (his personal dashboard) and a wardrobe app at usefitcheck.vercel.app. You are direct, concrete and short. No preamble, no padding, never a bulleted list when a sentence will do. You tell him when he's wrong. You never use em dashes or emoji.",
+      "api": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-6",
+        "keyEnv": "ANTHROPIC_API_KEY",
+        "maxTokens": 1400
+      },
+      "_notes": "This is me. Needs ANTHROPIC_API_KEY. Rename or restyle freely."
+    },
+    {
       "id": "claude-code",
-      "name": "CLAUDE",
-      "role": "Coding agent · CLI",
+      "name": "CLAUDE CODE",
+      "role": "Claude with file + terminal access",
       "kind": "cli",
       "floor": 1,
-      "seat": [4, 3],
+      "seat": [
+        4,
+        3
+      ],
       "shirt": "#c084fc",
       "hair": "dark",
       "cli": {
         "command": "claude",
-        "args": ["--print", "--output-format", "stream-json", "--verbose"],
-        "resumeArgs": ["--print", "--resume", "{session}", "--output-format", "stream-json", "--verbose"],
+        "args": [
+          "--print",
+          "--output-format",
+          "stream-json",
+          "--verbose"
+        ],
+        "resumeArgs": [
+          "--print",
+          "--resume",
+          "{session}",
+          "--output-format",
+          "stream-json",
+          "--verbose"
+        ],
         "streamJson": true,
         "cwd": "~"
       },
       "_notes": "Auth: either an existing `claude login` session, or ANTHROPIC_API_KEY. No git repo needed. Set cwd to a project folder if you want it to see that code."
     },
-
     {
       "id": "codex",
       "name": "CODEX",
       "role": "Coding agent · CLI",
       "kind": "cli",
       "floor": 1,
-      "seat": [7, 3],
+      "seat": [
+        7,
+        3
+      ],
       "shirt": "#5eead4",
       "hair": "fade",
       "cli": {
         "command": "codex",
-        "args": ["exec", "--json", "--skip-git-repo-check"],
-        "resumeArgs": ["exec", "resume", "--last", "--json", "--skip-git-repo-check"],
+        "args": [
+          "exec",
+          "--json",
+          "--skip-git-repo-check"
+        ],
+        "resumeArgs": [
+          "exec",
+          "resume",
+          "--last",
+          "--json",
+          "--skip-git-repo-check"
+        ],
         "streamJson": true,
         "cwd": "~"
       },
       "_notes": "Auth: `codex login`, or CODEX_API_KEY (exec only, not OPENAI_API_KEY). Codex normally refuses to run outside a git repo, hence --skip-git-repo-check. Add --sandbox workspace-write to args if you want it to edit files."
     },
-
     {
       "id": "gemini",
       "name": "GEMINI",
@@ -52,29 +100,44 @@
       "kind": "cli",
       "enabled": false,
       "floor": 1,
-      "seat": [10, 3],
+      "seat": [
+        10,
+        3
+      ],
       "shirt": "#93c5fd",
       "hair": "long",
       "cli": {
         "command": "gemini",
-        "args": ["--output-format", "stream-json", "-p"],
-        "resumeArgs": ["--output-format", "stream-json", "--resume", "latest", "-p"],
+        "args": [
+          "--output-format",
+          "stream-json",
+          "-p"
+        ],
+        "resumeArgs": [
+          "--output-format",
+          "stream-json",
+          "--resume",
+          "latest",
+          "-p"
+        ],
         "streamJson": true,
         "cwd": "~"
       },
       "_notes": "Off by default. --output-format is version-sensitive and errors on some builds. Auth: GEMINI_API_KEY. Test `gemini --output-format json -p hi` in a terminal before enabling."
     },
-
     {
       "id": "sonnet",
-      "name": "SONNET",
-      "role": "Anthropic API",
+      "name": "CLAUDE CHAT",
+      "role": "Claude, conversation only",
       "kind": "api",
       "floor": 1,
-      "seat": [4, 7],
+      "seat": [
+        4,
+        7
+      ],
       "shirt": "#4ade80",
       "hair": "curly",
-      "persona": "You are Sonnet, an agent sitting in Jack's pixel-art office. Jack is 13, builds real products, and hates padding. Be direct, concrete and short. No preamble, no bullet-point vomit. If you don't know something, say so in one line.",
+      "persona": "You are Claude, talking to Jack (13, Toronto, builds real products). This is a conversation, not a coding session: you have no file access and no terminal. Be direct and useful, short paragraphs, no filler.",
       "api": {
         "provider": "anthropic",
         "model": "claude-sonnet-4-6",
@@ -82,14 +145,16 @@
         "maxTokens": 1200
       }
     },
-
     {
       "id": "gpt",
       "name": "GPT",
-      "role": "OpenAI API",
+      "role": "OpenAI, conversation only",
       "kind": "api",
       "floor": 1,
-      "seat": [7, 7],
+      "seat": [
+        7,
+        7
+      ],
       "shirt": "#fbbf24",
       "hair": "short",
       "persona": "You are GPT, an agent in Jack's pixel-art office. Keep answers tight and useful. Jack is 13 and ships real products; skip the hedging.",
@@ -100,17 +165,40 @@
         "maxTokens": 1200
       }
     },
-
     {
       "id": "echo",
       "name": "ECHO",
       "role": "Local test stub",
       "kind": "echo",
       "floor": 1,
-      "seat": [10, 7],
+      "seat": [
+        10,
+        7
+      ],
       "shirt": "#94a3b8",
       "hair": "cap",
       "_notes": "Needs no keys and no CLI. Talk to this one first to prove the office and the chat work end to end."
+    },
+    {
+      "id": "ceo",
+      "name": "THE BOSS",
+      "role": "Strategy · corner office",
+      "kind": "api",
+      "floor": 1,
+      "seat": [
+        33,
+        3
+      ],
+      "shirt": "#1f2937",
+      "hair": "silver",
+      "persona": "You are the Boss in the corner office. You only care about whether something ships and whether it makes money. You ask one hard question about any plan Jack brings you, then give a yes or no. Never more than four sentences.",
+      "api": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-6",
+        "keyEnv": "ANTHROPIC_API_KEY",
+        "maxTokens": 600
+      },
+      "_notes": "Lives in the CEO office on floor 1."
     }
   ]
 }

@@ -26,6 +26,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 4300);
 const LOG_PATH = join(__dirname, 'data', 'events.json');
+const OVR_PATH = join(__dirname, 'data', 'overrides.json');
 
 /* ------------------------------------------------------------------ */
 /* config                                                              */
@@ -51,6 +52,25 @@ async function loadConfig() {
     a.sessionId = null;
   }
   console.log(`  loaded ${CONFIG.agents.length} agents from agents.json`);
+}
+
+/* ------------------------------------------------------------------ */
+/* overrides — what you renamed, where you moved people, your groups    */
+/* ------------------------------------------------------------------ */
+let OVR = { names: {}, floors: {}, groups: [] };
+async function loadOvr() {
+  try { OVR = { names:{}, floors:{}, groups:[], ...JSON.parse(await readFile(OVR_PATH,'utf8')) }; }
+  catch {}
+}
+async function saveOvr() {
+  await mkdir(dirname(OVR_PATH), { recursive: true });
+  await writeFile(OVR_PATH, JSON.stringify(OVR, null, 1));
+}
+function applyOvr() {
+  for (const a of CONFIG.agents) {
+    if (OVR.names[a.id])  a.name  = OVR.names[a.id];
+    if (OVR.floors[a.id]) a.floor = OVR.floors[a.id];
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -336,6 +356,7 @@ const server = createServer(async (req, res) => {
     await healthCheck();
     return json(res, 200, {
       ok: true,
+      groups: OVR.groups,
       agents: CONFIG.agents.map(a => ({
         id: a.id, name: a.name, role: a.role, kind: a.kind, seat: a.seat, floor: a.floor ?? 1,
         shirt: a.shirt, hair: a.hair, status: a.status, health: a.health, healthNote: a.healthNote,
@@ -369,14 +390,53 @@ const server = createServer(async (req, res) => {
 
     emit({ type: 'msg', agent: 'you', thread, role: 'you', text });
 
-    // "@all" or an explicit list, otherwise one agent
+    // "@all", an array of ids (group chat), or a single agent
     let targets;
     if (p.to === '@all') targets = CONFIG.agents.filter(a => a.enabled !== false);
+    else if (Array.isArray(p.to)) targets = CONFIG.agents.filter(a => p.to.includes(a.id));
     else targets = CONFIG.agents.filter(a => a.id === p.to);
     if (!targets.length) return json(res, 404, { ok: false, error: 'no such agent' });
 
     for (const a of targets) dispatch(a, text, thread);   // fire and forget; results stream
     return json(res, 200, { ok: true, dispatched: targets.map(a => a.id) });
+  }
+
+  if (path === '/api/rename' && req.method === 'POST') {
+    let body=''; for await (const c of req) body += c;
+    const { id, name } = JSON.parse(body || '{}');
+    const a = CONFIG.agents.find(x => x.id === id);
+    if (!a || !name) return json(res, 400, { ok:false, error:'need id and name' });
+    OVR.names[id] = String(name).slice(0, 18);
+    a.name = OVR.names[id]; await saveOvr();
+    emit({ type:'meta', agent:id, name:a.name });
+    return json(res, 200, { ok:true, name:a.name });
+  }
+
+  if (path === '/api/move' && req.method === 'POST') {
+    let body=''; for await (const c of req) body += c;
+    const { id, floor } = JSON.parse(body || '{}');
+    const a = CONFIG.agents.find(x => x.id === id);
+    if (!a || !floor) return json(res, 400, { ok:false, error:'need id and floor' });
+    OVR.floors[id] = Number(floor);
+    a.floor = Number(floor); await saveOvr();
+    emit({ type:'meta', agent:id, floor:a.floor });
+    return json(res, 200, { ok:true, floor:a.floor });
+  }
+
+  if (path === '/api/groups') {
+    if (req.method === 'POST') {
+      let body=''; for await (const c of req) body += c;
+      const gr = JSON.parse(body || '{}');
+      if (gr.remove) { OVR.groups = OVR.groups.filter(x => x.id !== gr.remove); }
+      else {
+        if (!gr.id || !Array.isArray(gr.members)) return json(res,400,{ok:false});
+        OVR.groups = OVR.groups.filter(x => x.id !== gr.id);
+        OVR.groups.push({ id: gr.id, name: gr.name || gr.id, members: gr.members });
+      }
+      await saveOvr();
+      return json(res, 200, { ok:true, groups: OVR.groups });
+    }
+    return json(res, 200, { ok:true, groups: OVR.groups });
   }
 
   if (path === '/api/reset' && req.method === 'POST') {
@@ -401,6 +461,8 @@ const server = createServer(async (req, res) => {
 
 /* ------------------------------------------------------------------ */
 await loadConfig();
+await loadOvr();
+applyOvr();
 await loadLog();
 await healthCheck();
 

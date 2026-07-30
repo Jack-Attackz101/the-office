@@ -63,54 +63,89 @@ canvas{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);image-r
  font-family:var(--px);font-size:11px;color:#8ff0b6;line-height:1.9;overflow-x:auto}
 .ecard small{display:block;margin-top:13px;color:var(--dimmer);font-size:11.5px;line-height:1.6}
 
-/* messenger */
-#msgr{width:0;flex:0 0 0;display:flex;background:var(--chrome);border-left:1px solid var(--line);
- transition:flex-basis .22s cubic-bezier(.32,.72,0,1),width .22s;overflow:hidden}
-#msgr.open{width:540px;flex-basis:540px}
-#rail{width:178px;flex:0 0 178px;border-right:1px solid var(--line);display:flex;flex-direction:column;background:#0d121a}
-.rh{padding:12px 13px 8px;font-family:var(--px);font-size:8.5px;color:var(--dimmer)}
-#convs{flex:1;overflow-y:auto}#convs::-webkit-scrollbar{width:0}
-.cv{display:flex;gap:9px;align-items:center;padding:8px 11px;cursor:pointer;border-left:2px solid transparent}
-.cv:hover{background:#141b26}.cv.on{background:#18222f;border-left-color:var(--blue)}
-.cvav{width:29px;height:29px;border-radius:9px;flex:0 0 29px;display:grid;place-items:center;
- font-family:var(--px);font-size:10px;color:#05070a;position:relative}
-.cvav i{position:absolute;right:-2px;bottom:-2px;width:9px;height:9px;border-radius:5px;border:2px solid #0d121a}
-.cvb{min-width:0;flex:1}
-.cvn{font-family:var(--px);font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cvp{font-size:10.5px;color:var(--dimmer);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-.ub{background:var(--blue);color:#fff;font-family:var(--px);font-size:8px;border-radius:9px;min-width:16px;height:16px;
- display:grid;place-items:center;padding:0 4px}
-#thread{flex:1;display:flex;flex-direction:column;min-width:0}
-.th{padding:10px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
-.thav{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-family:var(--px);font-size:10px;color:#05070a}
-.thn{font-family:var(--px);font-size:10px}.ths{font-size:10.5px;color:var(--dimmer);margin-top:1px}
-.xb{margin-left:auto;background:none;border:none;color:var(--dimmer);font-size:21px;cursor:pointer;line-height:1}
-.xb:hover{color:var(--ink)}
-#log{flex:1;overflow-y:auto;padding:16px 14px}
-#log::-webkit-scrollbar{width:7px}#log::-webkit-scrollbar-thumb{background:#293244;border-radius:4px}
-.grp{display:flex;flex-direction:column;gap:2px;margin-bottom:11px}
-.gn{font-family:var(--px);font-size:8px;color:var(--dimmer);margin:0 0 4px 12px}
-.b{max-width:78%;padding:9px 13px;font-size:13.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word;
- animation:pop .18s cubic-bezier(.32,.72,0,1)}
-@keyframes pop{from{opacity:0;transform:translateY(5px) scale(.98)}to{opacity:1;transform:none}}
-.b.them{background:#252c38;align-self:flex-start;border-radius:18px 18px 18px 6px}
-.b.them.mid{border-radius:6px 18px 18px 6px}
-.b.me{background:var(--blue);color:#fff;align-self:flex-end;border-radius:18px 18px 6px 18px}
-.b.me.mid{border-radius:18px 6px 6px 18px}
-.b.sys{align-self:center;background:none;color:var(--dimmer);font-size:11px;text-align:center;
- border:1px dashed var(--line);border-radius:10px;padding:7px 11px;max-width:94%}
-.stamp{font-family:var(--px);font-size:9px;color:var(--dimmer);text-align:center;margin:4px 0 10px}
-.typing{align-self:flex-start;background:#252c38;border-radius:18px;padding:12px 15px;display:flex;gap:4px;width:fit-content}
-.typing i{width:6px;height:6px;border-radius:3px;background:#79879b;animation:bl 1.25s infinite}
-.typing i:nth-child(2){animation-delay:.16s}.typing i:nth-child(3){animation-delay:.32s}
-@keyframes bl{0%,62%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-4px)}}
-.comp{border-top:1px solid var(--line);padding:10px 11px;display:flex;gap:9px;align-items:flex-end}
-.comp textarea{flex:1;background:#1a212c;border:1px solid var(--line);color:var(--ink);border-radius:19px;
- padding:10px 14px;font-family:var(--ui);font-size:13.5px;outline:none;resize:none;max-height:100px;line-height:1.45}
-.comp textarea:focus{border-color:#3b4759}
-.send{width:32px;height:32px;border-radius:17px;background:var(--blue);border:none;color:#fff;cursor:pointer;font-size:15px;flex:0 0 32px}
-.send:disabled{background:#293244;color:#5a6576}
+/* ── phone ── */
+#phone{position:absolute;right:22px;bottom:-560px;width:318px;z-index:45;transition:bottom .4s cubic-bezier(.32,.72,0,1)}
+#phone.up{bottom:-14px}
+#grab{position:absolute;top:-42px;right:0;width:46px;height:38px;border-radius:12px 12px 0 0;border:1px solid var(--line);
+ border-bottom:none;background:var(--chrome);color:#fff;font-size:19px;cursor:pointer}
+#phone .body{background:#0c0f15;border:5px solid #262d3a;border-radius:34px 34px 0 0;padding:8px 8px 0;
+ box-shadow:0 -12px 44px #000b}
+.notch{width:78px;height:5px;border-radius:3px;background:#333c4a;margin:2px auto 6px}
+.status{display:flex;justify-content:space-between;font-family:var(--px);font-size:8px;color:var(--dimmer);padding:0 8px 6px}
+#screen{height:452px;background:#0f141c;border-radius:20px;overflow:hidden;display:flex;flex-direction:column}
+.home{width:96px;height:4px;border-radius:2px;background:#39414f;margin:8px auto}
 
+.hwrap{padding:22px 18px}
+.hhead{font-family:var(--px);font-size:13px;letter-spacing:.5px}
+.hsub{font-size:11px;color:var(--dimmer);margin-top:3px;margin-bottom:20px}
+.apps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 10px}
+.app{text-align:center;cursor:pointer}
+.ai{width:54px;height:54px;margin:0 auto;border-radius:15px;background:linear-gradient(160deg,#26303f,#1a2230);
+ border:1px solid #2f3a4a;display:grid;place-items:center;font-size:24px;position:relative;transition:.13s}
+.app:hover .ai{transform:translateY(-3px);border-color:#3d4a5e}
+.abadge{position:absolute;top:-5px;right:-5px;background:var(--bad);color:#fff;font-family:var(--px);font-size:8px;
+ min-width:17px;height:17px;border-radius:9px;display:grid;place-items:center;padding:0 4px}
+.an{font-size:10.5px;color:var(--dim);margin-top:6px}
+
+.appbar{display:flex;align-items:center;gap:9px;padding:11px 12px;border-bottom:1px solid var(--line);flex:0 0 auto}
+.appbar b{font-family:var(--px);font-size:10px}
+.back{background:none;border:none;color:var(--blue);font-size:24px;cursor:pointer;line-height:.7;padding:0}
+.mk{margin-left:auto;background:#233044;border:1px solid var(--line);color:#8fbcff;font-family:var(--px);
+ font-size:8px;padding:6px 9px;border-radius:7px;cursor:pointer}
+.cav{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-family:var(--px);font-size:9px;color:#05070a}
+.ct2{line-height:1.25}.ct2 b{font-family:var(--px);font-size:9.5px;display:block}
+.ct2 span{font-size:9.5px;color:var(--dimmer)}
+.scroll{flex:1;overflow-y:auto;padding:8px 0}
+.scroll::-webkit-scrollbar{width:0}
+
+.row,.drow{display:flex;gap:10px;align-items:center;padding:9px 12px;cursor:pointer}
+.row:hover,.drow:hover{background:#151d29}
+.rav{width:34px;height:34px;border-radius:11px;flex:0 0 34px;display:grid;place-items:center;
+ font-family:var(--px);font-size:11px;color:#05070a;position:relative}
+.rav i{position:absolute;right:-2px;bottom:-2px;width:10px;height:10px;border-radius:5px;border:2px solid #0f141c}
+.rb{min-width:0;flex:1}.rn{font-family:var(--px);font-size:9px}
+.rp{font-size:10.5px;color:var(--dimmer);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.rub{background:var(--blue);color:#fff;font-family:var(--px);font-size:8px;min-width:17px;height:17px;
+ border-radius:9px;display:grid;place-items:center;padding:0 4px}
+.db{flex:1;min-width:0}
+.dname{background:#1a222e;border:1px solid var(--line);color:var(--ink);border-radius:7px;
+ padding:5px 8px;font-family:var(--px);font-size:9px;width:100%}
+.dsub{font-size:10px;color:var(--dimmer);margin:3px 0 5px}
+.fsel{display:flex;gap:5px}
+.fpick{background:#1a222e;border:1px solid var(--line);color:var(--dimmer);font-family:var(--px);font-size:8px;
+ padding:4px 8px;border-radius:6px;cursor:pointer}
+.fpick.on{background:#1d3350;border-color:var(--blue);color:#8fbcff}
+
+.chat{padding:12px 12px 4px;display:flex;flex-direction:column}
+.bb{max-width:80%;padding:8px 12px;font-size:12.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word;
+ margin-bottom:3px;animation:pop .17s cubic-bezier(.32,.72,0,1)}
+@keyframes pop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.bb.them{background:#252d3a;align-self:flex-start;border-radius:15px 15px 15px 5px}
+.bb.me{background:var(--blue);color:#fff;align-self:flex-end;border-radius:15px 15px 5px 15px}
+.bb.typ{display:flex;gap:4px}.bb.typ i{width:5px;height:5px;border-radius:3px;background:#7f8b9d;animation:bl 1.2s infinite}
+.bb.typ i:nth-child(2){animation-delay:.15s}.bb.typ i:nth-child(3){animation-delay:.3s}
+@keyframes bl{0%,60%,100%{opacity:.3}30%{opacity:1}}
+.gn{font-family:var(--px);font-size:8px;margin:4px 0 3px 4px}
+.stamp{font-family:var(--px);font-size:8px;color:var(--dimmer);text-align:center;margin:7px 0 5px}
+.sys{font-size:10.5px;color:var(--dimmer);text-align:center;padding:9px 14px;line-height:1.5}
+.pill{flex:0 0 auto;border-top:1px solid var(--line);padding:8px 9px;display:flex;gap:7px;align-items:flex-end;flex-wrap:wrap}
+.pill.over{background:#12263d;border-color:var(--blue)}
+.pill textarea{flex:1;min-width:0;background:#1a222e;border:1px solid var(--line);color:var(--ink);border-radius:16px;
+ padding:8px 12px;font-family:var(--ui);font-size:12.5px;outline:none;resize:none;max-height:70px}
+.psend{width:29px;height:29px;border-radius:15px;background:var(--blue);border:none;color:#fff;cursor:pointer;flex:0 0 29px}
+.atts{display:flex;gap:5px;flex-wrap:wrap;width:100%}
+.att{background:#233044;color:#9fc6ff;font-size:10px;padding:3px 7px;border-radius:6px}
+.att b{margin-left:5px;cursor:pointer;color:#ff9f9f}
+.bigdrop{margin:14px 12px;padding:34px 12px;border:2px dashed var(--line);border-radius:14px;text-align:center;
+ font-family:var(--px);font-size:9px;color:var(--dim);line-height:2}
+.bigdrop span{font-size:9px;color:var(--dimmer)}
+.bigdrop.over{border-color:var(--blue);background:#12263d}
+.arow{display:flex;gap:8px;align-items:baseline;padding:7px 12px;font-size:10.5px;color:var(--dim)}
+.arow b{font-family:var(--px);font-size:8.5px;flex:0 0 auto}
+.arow span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arow i{font-family:var(--px);font-size:7.5px;color:var(--dimmer)}
+.wide{display:block;width:calc(100% - 24px);margin:14px 12px;padding:10px;background:#33202a;border:1px solid #4a2b35;
+ color:#ff9f9f;font-family:var(--px);font-size:9px;border-radius:9px;cursor:pointer}
 #roster{position:absolute;left:12px;bottom:12px;z-index:25;background:#05070ae8;border:1px solid var(--line);
  border-radius:11px;padding:10px 12px;min-width:196px}
 #roster h4{font-family:var(--px);font-size:8px;color:var(--dimmer);margin-bottom:8px}
@@ -130,8 +165,7 @@ canvas{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);image-r
   <span class="sep"></span>
   <span class="conn"><span class="led" id="led"></span><span id="ct">connecting…</span></span>
   <span class="spacer"></span>
-  <button class="btn" id="resetb">RESET CHATS</button>
-  <button class="btn" id="helpb">SETUP</button>
+  <button class="btn" onclick="phoneToggle()">PHONE</button>
 </header>
 
 <main>
@@ -152,17 +186,17 @@ node server.mjs</pre>
     </div></div>
   </div>
 
-  <aside id="msgr">
-    <div id="rail"><div class="rh">CONVERSATIONS</div><div id="convs"></div></div>
-    <div id="thread">
-      <div class="th"><div class="thav" id="thav">#</div>
-        <div><div class="thn" id="thn">—</div><div class="ths" id="ths">—</div></div>
-        <button class="xb" id="xb">×</button></div>
-      <div id="log"></div>
-      <div class="comp"><textarea id="ta" rows="1" placeholder="Message…"></textarea>
-        <button class="send" id="sb">↑</button></div>
+  
+  <!-- THE PHONE -->
+  <div id="phone">
+    <button id="grab" onclick="phoneToggle()">📱</button>
+    <div class="body">
+      <div class="notch"></div>
+      <div class="status"><span id="ptime">--:--</span><span>●●●</span></div>
+      <div id="screen"></div>
+      <div class="home" onclick="CUR=null;goApp('home')"></div>
     </div>
-  </aside>
+  </div>
 </main>
 
 <script>
@@ -511,73 +545,244 @@ cv.addEventListener('click',e=>{
   const a=pick((e.clientX-r.left)/S,(e.clientY-r.top)/S); if(a) openConv(a.id);
 });
 
-/* ---------- messenger ---------- */
-const msgr=document.getElementById('msgr');
-let TH={}, CUR=null, UNREAD={}, TYPING={};
-function convList(){
-  const el=document.getElementById('convs'); el.innerHTML='';
-  if(!AGENTS.length){ el.innerHTML='<div style="padding:12px;font-size:11px;color:#5a6576">No agents yet.</div>'; return; }
-  const rows=[{id:'@all',name:'ALL-HANDS',role:'Everyone at once',shirt:'#32d74b',status:'idle'},...AGENTS];
-  for(const a of rows){
-    const last=(TH[a.id]||[]).filter(e=>e.type==='msg').at(-1);
-    const d=document.createElement('div'); d.className='cv'+(CUR===a.id?' on':'');
-    d.innerHTML=`<div class="cvav" style="background:${a.shirt}">${a.name[0]}<i style="background:${SC[a.status]||'#5a6576'}"></i></div>
-     <div class="cvb"><div class="cvn">${a.name}</div>
-     <div class="cvp">${last?(last.role==='you'?'You: ':'')+String(last.text).slice(0,32):a.role}</div></div>
-     ${UNREAD[a.id]?`<span class="ub">${UNREAD[a.id]}</span>`:''}`;
-    d.onclick=()=>openConv(a.id); el.appendChild(d);
-  }
+/* ═══════════════ THE PHONE ═══════════════
+   A game-style device. Apps live inside it.
+   ═══════════════════════════════════════════ */
+let PH_OPEN=false, PH_APP='home';
+let TH={}, CUR=null, UNREAD={}, TYPING={}, GROUPS=[];
+let DRAFT_FILES=[];
+
+const FLOORNAMES={1:'1F Open floor',2:'2F The loft',3:'3F War room'};
+
+const APPS=[
+ {id:'msg',   name:'Messages',  icon:'💬', badge:()=>Object.values(UNREAD).reduce((a,b)=>a+(b||0),0)},
+ {id:'dir',   name:'Directory', icon:'👥'},
+ {id:'files', name:'Files',     icon:'📎'},
+ {id:'act',   name:'Activity',  icon:'📈'},
+ {id:'set',   name:'Settings',  icon:'⚙️'},
+];
+
+function phoneToggle(v){
+  PH_OPEN = v===undefined ? !PH_OPEN : v;
+  document.getElementById('phone').classList.toggle('up',PH_OPEN);
+  if(PH_OPEN) renderPhone();
+}
+function goApp(a){ PH_APP=a; renderPhone(); }
+
+function renderPhone(){
+  const scr=document.getElementById('screen');
+  document.getElementById('ptime').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  if(PH_APP==='home')  return scr.innerHTML=viewHome();
+  if(PH_APP==='msg')   return renderMsgApp(scr);
+  if(PH_APP==='dir')   return renderDir(scr);
+  if(PH_APP==='files') return renderFiles(scr);
+  if(PH_APP==='act')   return renderAct(scr);
+  if(PH_APP==='set')   return renderSet(scr);
+}
+function viewHome(){
+  const grid=APPS.map(a=>{
+    const b=a.badge?a.badge():0;
+    return '<div class="app" onclick="goApp(\''+a.id+'\')"><div class="ai">'+a.icon+
+      (b?'<span class="abadge">'+b+'</span>':'')+'</div><div class="an">'+a.name+'</div></div>';
+  }).join('');
+  const on=AGENTS.filter(a=>a.status==='working').length;
+  return '<div class="hwrap"><div class="hhead">THE OFFICE</div>'+
+    '<div class="hsub">'+AGENTS.length+' agents · '+on+' working</div>'+
+    '<div class="apps">'+grid+'</div></div>';
+}
+
+/* ---------- Messages ---------- */
+function convRows(){
+  const rows=[{id:'@all',name:'All-hands',sub:'Everyone at once',shirt:'#32d74b',kind:'all'}];
+  for(const gr of GROUPS) rows.push({id:gr.id,name:gr.name,sub:gr.members.length+' agents',shirt:'#ff9f0a',kind:'group'});
+  for(const a of AGENTS) rows.push({id:a.id,name:a.name,sub:a.role,shirt:a.shirt,status:a.status,kind:'one'});
+  return rows;
+}
+function renderMsgApp(scr){
+  if(CUR) return renderChat(scr);
+  const list=convRows().map(r=>{
+    const last=(TH[r.id]||[]).filter(e=>e.type==='msg').at(-1);
+    const prev=last?((last.role==='you'?'You: ':'')+String(last.text).slice(0,30)):r.sub;
+    const dot=r.status?'<i style="background:'+SC[r.status]+'"></i>':'';
+    return '<div class="row" onclick="openConv(\''+r.id+'\')">'+
+      '<div class="rav" style="background:'+r.shirt+'">'+r.name[0]+dot+'</div>'+
+      '<div class="rb"><div class="rn">'+r.name+'</div><div class="rp">'+prev+'</div></div>'+
+      (UNREAD[r.id]?'<span class="rub">'+UNREAD[r.id]+'</span>':'')+'</div>';
+  }).join('');
+  scr.innerHTML='<div class="appbar"><button class="back" onclick="goApp(\'home\')">‹</button>'+
+    '<b>Messages</b><button class="mk" onclick="newGroup()">+ Group</button></div>'+
+    '<div class="scroll">'+list+'</div>';
 }
 function openConv(id){
-  CUR=id; UNREAD[id]=0; msgr.classList.add('open');
-  const a=id==='@all'?{name:'ALL-HANDS',role:'Everyone at once',shirt:'#32d74b',status:'idle'}:AGENTS.find(x=>x.id===id);
-  if(!a) return;
-  document.getElementById('thn').textContent=a.name;
-  document.getElementById('ths').textContent=a.role+(a.status?' · '+(SL[a.status]||a.status):'');
-  const av=document.getElementById('thav'); av.style.background=a.shirt; av.textContent=a.name[0];
-  renderThread(); convList(); setTimeout(()=>document.getElementById('ta').focus(),150);
+  CUR=id; UNREAD[id]=0; PH_APP='msg'; phoneToggle(true); renderPhone();
 }
-function renderThread(){
-  const log=document.getElementById('log'); log.innerHTML='';
+function renderChat(scr){
+  const meta = CUR==='@all' ? {name:'All-hands',shirt:'#32d74b',sub:'Everyone at once'}
+    : GROUPS.find(g=>g.id===CUR) ? (()=>{const g=GROUPS.find(x=>x.id===CUR);
+        return {name:g.name,shirt:'#ff9f0a',sub:g.members.map(m=>(AGENTS.find(a=>a.id===m)||{}).name||m).join(', ')};})()
+    : (()=>{const a=AGENTS.find(x=>x.id===CUR)||{name:CUR,shirt:'#8794a6',role:''};
+        return {name:a.name,shirt:a.shirt,sub:(a.role||'')+' · '+(SL[a.status]||'')};})();
+  let html='<div class="appbar"><button class="back" onclick="CUR=null;renderPhone()">‹</button>'+
+    '<div class="cav" style="background:'+meta.shirt+'">'+meta.name[0]+'</div>'+
+    '<div class="ct2"><b>'+meta.name+'</b><span>'+meta.sub+'</span></div></div>'+
+    '<div class="scroll chat" id="chatscroll">'+bubbles()+'</div>'+
+    '<div class="pill" id="drop">'+
+      (DRAFT_FILES.length?'<div class="atts">'+DRAFT_FILES.map((f,i)=>'<span class="att">'+f.name+
+        '<b onclick="DRAFT_FILES.splice('+i+',1);renderPhone()">×</b></span>').join('')+'</div>':'')+
+      '<textarea id="pta" rows="1" placeholder="Message…"></textarea>'+
+      '<button class="psend" onclick="sendMsg()">↑</button></div>';
+  scr.innerHTML=html;
+  const ta=document.getElementById('pta');
+  ta.oninput=()=>{ta.style.height='auto';ta.style.height=Math.min(70,ta.scrollHeight)+'px'};
+  ta.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}};
+  ta.focus();
+  const cs=document.getElementById('chatscroll'); cs.scrollTop=cs.scrollHeight;
+  const dz=document.getElementById('drop');
+  dz.ondragover=e=>{e.preventDefault();dz.classList.add('over')};
+  dz.ondragleave=()=>dz.classList.remove('over');
+  dz.ondrop=async e=>{
+    e.preventDefault(); dz.classList.remove('over');
+    for(const f of e.dataTransfer.files){
+      const txt=await f.text().catch(()=>'(binary file)');
+      DRAFT_FILES.push({name:f.name, text:txt.slice(0,20000)});
+    }
+    renderPhone();
+  };
+}
+function bubbles(){
   const evs=TH[CUR]||[];
-  if(!evs.length){ const d=document.createElement('div'); d.className='b sys';
-    d.textContent = CUR==='@all' ? 'One message goes to every agent. Replies land here as they finish.' : 'No messages yet.';
-    log.appendChild(d); }
-  let lastKey=null,grp=null,lastStamp=null;
+  if(!evs.length) return '<div class="sys">Nothing yet. Everything you say is remembered across every chat with that agent.</div>';
+  let out='',lastKey=null,lastStamp=null;
   for(const e of evs){
     if(e.type!=='msg') continue;
-    const st=new Date(e.at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-    if(st!==lastStamp){ const s=document.createElement('div'); s.className='stamp'; s.textContent=st; log.appendChild(s); lastStamp=st; grp=null;lastKey=null; }
-    if(e.role==='system'){ const d=document.createElement('div'); d.className='b sys'; d.textContent=e.text; log.appendChild(d); grp=null;lastKey=null; continue; }
+    const st=new Date(e.at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    if(st!==lastStamp){ out+='<div class="stamp">'+st+'</div>'; lastStamp=st; lastKey=null; }
+    if(e.role==='system'){ out+='<div class="sys">'+esc(e.text)+'</div>'; lastKey=null; continue; }
     const mine=e.role==='you', key=mine?'me':e.agent;
-    if(key!==lastKey){ grp=document.createElement('div'); grp.className='grp'; grp.style.alignItems=mine?'flex-end':'flex-start'; log.appendChild(grp);
-      if(!mine&&CUR==='@all'){ const ag=AGENTS.find(x=>x.id===e.agent); const n=document.createElement('div'); n.className='gn';
-        n.style.color=ag?ag.shirt:'#8794a6'; n.textContent=ag?ag.name:e.agent; grp.appendChild(n); }
-      lastKey=key; }
-    const b=document.createElement('div'); b.className='b '+(mine?'me':'them'); b.textContent=e.text; grp.appendChild(b);
+    if(!mine && key!==lastKey && CUR!==e.agent){
+      const ag=AGENTS.find(a=>a.id===e.agent);
+      out+='<div class="gn" style="color:'+(ag?ag.shirt:'#8794a6')+'">'+(ag?ag.name:e.agent)+'</div>';
+    }
+    out+='<div class="bb '+(mine?'me':'them')+'">'+esc(e.text)+'</div>';
+    lastKey=key;
   }
-  const typers = CUR==='@all' ? AGENTS.filter(a=>TYPING[a.id]) : (TYPING[CUR]?[1]:[]);
-  if(typers.length){ const t=document.createElement('div'); t.className='typing'; t.innerHTML='<i></i><i></i><i></i>'; log.appendChild(t); }
-  log.scrollTop=log.scrollHeight;
+  const typers = Object.keys(TYPING).filter(k=>TYPING[k]);
+  if(typers.length) out+='<div class="bb them typ"><i></i><i></i><i></i></div>';
+  return out;
 }
-document.getElementById('xb').onclick=()=>{msgr.classList.remove('open');CUR=null;convList()};
-const ta=document.getElementById('ta');
-ta.addEventListener('input',()=>{ta.style.height='auto';ta.style.height=Math.min(100,ta.scrollHeight)+'px'});
-ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg()}});
-document.getElementById('sb').onclick=sendMsg;
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
 async function sendMsg(){
-  const text=ta.value.trim(); if(!text||!CUR) return;
-  ta.value=''; ta.style.height='auto';
-  if(!connected){ (TH[CUR]||=[]).push({type:'msg',agent:'you',role:'you',text,at:Date.now()});
-    (TH[CUR]||=[]).push({type:'msg',agent:CUR,role:'system',text:'The server is not running, so nothing was sent.',at:Date.now()});
-    return renderThread(); }
-  const targets=CUR==='@all'?AGENTS.map(a=>a.id):[CUR];
-  for(const id of targets) TYPING[id]=true; renderThread();
+  const ta=document.getElementById('pta'); if(!ta) return;
+  let text=ta.value.trim();
+  if(DRAFT_FILES.length){
+    text += (text?'\n\n':'') + DRAFT_FILES.map(f=>'--- '+f.name+' ---\n'+f.text).join('\n\n');
+  }
+  if(!text||!CUR) return;
+  ta.value=''; DRAFT_FILES=[];
+  if(!connected){
+    (TH[CUR]||=[]).push({type:'msg',agent:'you',role:'you',text,at:Date.now()});
+    (TH[CUR]||=[]).push({type:'msg',agent:CUR,role:'system',text:'Server is not running.',at:Date.now()});
+    return renderPhone();
+  }
+  let to;
+  if(CUR==='@all') to='@all';
+  else { const gr=GROUPS.find(g=>g.id===CUR); to = gr ? gr.members : CUR; }
+  const ids = to==='@all'?AGENTS.map(a=>a.id):(Array.isArray(to)?to:[to]);
+  for(const id of ids) TYPING[id]=true;
+  renderPhone();
   try{ await fetch(API+'/api/send',{method:'POST',headers:{'content-type':'application/json'},
-    body:JSON.stringify({to:CUR==='@all'?'@all':CUR,text,thread:CUR})}); }
-  catch(e){ for(const id of targets) TYPING[id]=false;
-    (TH[CUR]||=[]).push({type:'msg',agent:CUR,role:'system',text:'Could not reach the server: '+e.message,at:Date.now()}); renderThread(); }
+    body:JSON.stringify({to,text,thread:CUR})}); }
+  catch(e){ for(const id of ids) TYPING[id]=false;
+    (TH[CUR]||=[]).push({type:'msg',agent:CUR,role:'system',text:'Could not reach server: '+e.message,at:Date.now()});
+    renderPhone(); }
 }
+
+/* ---------- Directory: rename + move floors ---------- */
+function renderDir(scr){
+  const rows=AGENTS.map(a=>
+    '<div class="drow"><div class="rav" style="background:'+a.shirt+'">'+a.name[0]+
+      '<i style="background:'+SC[a.status]+'"></i></div>'+
+    '<div class="db"><input class="dname" value="'+a.name.replace(/"/g,'&quot;')+'" '+
+      'onchange="rename(\''+a.id+'\',this.value)"><div class="dsub">'+a.role+'</div>'+
+      '<div class="fsel">'+[1,2,3].map(f=>'<button class="fpick'+((a.floor||1)===f?' on':'')+'" '+
+        'onclick="moveTo(\''+a.id+'\','+f+')">'+f+'F</button>').join('')+'</div></div>'+
+    '<button class="mk" onclick="openConv(\''+a.id+'\')">Chat</button></div>').join('');
+  scr.innerHTML='<div class="appbar"><button class="back" onclick="goApp(\'home\')">‹</button><b>Directory</b></div>'+
+    '<div class="scroll">'+rows+'<div class="sys">Rename anyone, or tap a floor to send them there. Both stick after a restart.</div></div>';
+}
+async function rename(id,name){
+  name=(name||'').trim().slice(0,18); if(!name) return;
+  const a=AGENTS.find(x=>x.id===id); if(a) a.name=name;
+  roster(); renderPhone();
+  try{ await fetch(API+'/api/rename',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({id,name})}); }catch{}
+}
+async function moveTo(id,floor){
+  const a=AGENTS.find(x=>x.id===id); if(!a) return;
+  a.floor=floor; a.x=undefined; seatAgents(); floorBtns(); roster(); renderPhone();
+  try{ await fetch(API+'/api/move',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({id,floor})}); }catch{}
+}
+
+/* ---------- groups ---------- */
+async function newGroup(){
+  const name=prompt('Group name?','Launch team'); if(!name) return;
+  const picked=[];
+  for(const a of AGENTS){ if(confirm('Add '+a.name+' to "'+name+'"?')) picked.push(a.id); }
+  if(!picked.length) return;
+  const id='g_'+Date.now().toString(36);
+  GROUPS.push({id,name,members:picked});
+  try{ await fetch(API+'/api/groups',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({id,name,members:picked})}); }catch{}
+  openConv(id);
+}
+
+/* ---------- Files ---------- */
+function renderFiles(scr){
+  scr.innerHTML='<div class="appbar"><button class="back" onclick="goApp(\'home\')">‹</button><b>Files</b></div>'+
+   '<div class="scroll"><div class="bigdrop" id="bigdrop">Drop a file here<br><span>then pick who gets it</span></div>'+
+   '<div id="fout"></div></div>';
+  const bd=document.getElementById('bigdrop');
+  bd.ondragover=e=>{e.preventDefault();bd.classList.add('over')};
+  bd.ondragleave=()=>bd.classList.remove('over');
+  bd.ondrop=async e=>{
+    e.preventDefault(); bd.classList.remove('over');
+    for(const f of e.dataTransfer.files){
+      const txt=await f.text().catch(()=>'(binary)');
+      DRAFT_FILES.push({name:f.name,text:txt.slice(0,20000)});
+    }
+    document.getElementById('fout').innerHTML='<div class="sys">'+DRAFT_FILES.length+
+      ' file(s) attached. Open any chat and hit send.</div>'+
+      AGENTS.map(a=>'<div class="row" onclick="openConv(\''+a.id+'\')"><div class="rav" style="background:'+
+        a.shirt+'">'+a.name[0]+'</div><div class="rb"><div class="rn">'+a.name+'</div>'+
+        '<div class="rp">send to '+a.name+'</div></div></div>').join('');
+  };
+}
+
+/* ---------- Activity ---------- */
+function renderAct(scr){
+  const all=Object.values(TH).flat().filter(e=>e.type==='msg').sort((a,b)=>b.at-a.at).slice(0,40);
+  const rows=all.map(e=>{
+    const a=AGENTS.find(x=>x.id===e.agent);
+    const who=e.role==='you'?'You':(a?a.name:e.agent);
+    return '<div class="arow"><b style="color:'+(e.role==='you'?'#0a84ff':(a?a.shirt:'#8794a6'))+'">'+who+
+      '</b><span>'+esc(String(e.text).slice(0,64))+'</span>'+
+      '<i>'+new Date(e.at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</i></div>';
+  }).join('') || '<div class="sys">Nothing has happened yet.</div>';
+  scr.innerHTML='<div class="appbar"><button class="back" onclick="goApp(\'home\')">‹</button><b>Activity</b></div>'+
+    '<div class="scroll">'+rows+'</div>';
+}
+
+/* ---------- Settings ---------- */
+function renderSet(scr){
+  const rows=AGENTS.map(a=>'<div class="arow"><b style="color:'+a.shirt+'">'+a.name+'</b>'+
+    '<span>'+(a.healthNote||'')+'</span><i style="color:'+SC[a.status]+'">'+(SL[a.status]||'')+'</i></div>').join('');
+  scr.innerHTML='<div class="appbar"><button class="back" onclick="goApp(\'home\')">‹</button><b>Settings</b></div>'+
+   '<div class="scroll"><div class="sys">'+(connected?'Connected to localhost:4300':'No server. Run node server.mjs')+'</div>'+
+   rows+'<button class="wide" onclick="wipe()">Reset all chats</button></div>';
+}
+async function wipe(){ TH={};UNREAD={};renderPhone();try{await fetch(API+'/api/reset',{method:'POST'})}catch{} }
 
 /* ---------- server ---------- */
 function seatAgents(){
@@ -603,6 +808,7 @@ async function loadAgents(){
   try{
     const r=await fetch(API+'/api/agents',{signal:AbortSignal.timeout(2500)});
     const j=await r.json();
+    GROUPS=j.groups||GROUPS;
     const byId={}; AGENTS.forEach(a=>byId[a.id]=a);
     AGENTS=j.agents.map(n=>{
       const old=byId[n.id]||{};
@@ -618,18 +824,25 @@ async function loadAgents(){
     document.getElementById('ct').textContent='no server';
     document.getElementById('empty').classList.add('show');
   }
-  floorBtns(); roster(); convList();
+  floorBtns(); roster(); renderPhone();
 }
 function ingest(e){
   if(e.type==='msg'){
     const tid=e.thread||'main'; (TH[tid]||=[]).push(e);
     if(e.role!=='you') TYPING[e.agent]=false;
     if(tid!==CUR&&e.role!=='you') UNREAD[tid]=(UNREAD[tid]||0)+1;
-    if(tid===CUR) renderThread(); convList();
+    if(PH_OPEN) renderPhone();
   }
-  if(e.type==='status'){ const a=AGENTS.find(x=>x.id===e.agent);
-    if(a){ a.status=e.status; roster(); convList(); floorBtns();
-      if(CUR===a.id) document.getElementById('ths').textContent=a.role+' · '+(SL[a.status]||a.status); } }
+  if(e.type==='status'){
+    const a=AGENTS.find(x=>x.id===e.agent);
+    if(a){ a.status=e.status; roster(); floorBtns(); if(PH_OPEN) renderPhone(); }
+  }
+  if(e.type==='meta'){
+    const a=AGENTS.find(x=>x.id===e.agent);
+    if(a){ if(e.name) a.name=e.name;
+           if(e.floor){ a.floor=e.floor; a.x=undefined; seatAgents(); }
+           roster(); floorBtns(); if(PH_OPEN) renderPhone(); }
+  }
 }
 function connectStream(){
   try{ const es=new EventSource(API+'/api/stream');
@@ -641,7 +854,7 @@ function connectStream(){
 async function loadHistory(){
   try{ const r=await fetch(API+'/api/events'); const j=await r.json();
     for(const e of j.events) if(e.type==='msg') (TH[e.thread||'main']||=[]).push(e);
-    convList(); }catch{}
+    renderPhone(); }catch{}
 }
 function floorBtns(){
   const el=document.getElementById('fbtns'); el.innerHTML='';
@@ -664,13 +877,12 @@ function roster(){
     el.appendChild(d);
   }
 }
-document.getElementById('helpb').onclick=()=>document.getElementById('empty').classList.toggle('show');
+
 document.getElementById('empty').onclick=e=>{if(e.target.id==='empty')e.currentTarget.classList.remove('show')};
-document.getElementById('resetb').onclick=async()=>{TH={};UNREAD={};renderThread();convList();
-  try{await fetch(API+'/api/reset',{method:'POST'})}catch{}};
 
 window.addEventListener('resize',fit);
 fit(); floorBtns(); requestAnimationFrame(draw);
+setInterval(()=>{ if(PH_OPEN) document.getElementById('ptime').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); },10000);
 loadAgents(); loadHistory(); connectStream();
 setInterval(loadAgents,12000);
 </script>
