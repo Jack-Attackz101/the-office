@@ -1,7 +1,7 @@
 {
   "_readme": [
     "Copy to agents.json (the server does this for you on first run) and edit freely.",
-    "kind: 'cli' (spawns a coding CLI) | 'api' (Anthropic/OpenAI chat) | 'echo' (offline stub, no keys).",
+    "kind: 'cli' (spawns a coding CLI) | 'api' (Anthropic/OpenAI chat) | 'slack' (posts to a Slack channel, reads the thread reply) | 'echo' (offline stub, no keys).",
     "You can rename agents and move them between floors from the in-game phone — those changes save to data/overrides.json and survive restarts.",
     "floor: 1, 2 or 3. seat is optional; the office seats people automatically.",
     "hair: dark | fade | long | curly | short | cap | mint | pink | silver",
@@ -274,6 +274,150 @@
         "keyEnv": "ANTHROPIC_API_KEY",
         "maxTokens": 1100
       }
+    },
+    {
+      "id": "viktor",
+      "name": "VIKTOR",
+      "role": "Slack agent · Ops",
+      "kind": "slack",
+      "floor": 2,
+      "shirt": "#38bdf8",
+      "hair": "dark",
+      "slack": {
+        "channel": "C0BGDDJBCQ0",
+        "mention": "U0BFM2GEJ1F",
+        "keyword": null,
+        "tokenEnv": "SLACK_TOKEN",
+        "pollMs": 4000,
+        "timeoutMs": 180000
+      },
+      "_notes": "Viktor has no API — this posts into #ai-team-hq and reads his threaded reply back. Currently out of credits, so he'll say so until that's resolved. Needs SLACK_TOKEN."
+    },
+    {
+      "id": "slack-claude",
+      "name": "CLAUDE (SLACK)",
+      "role": "Slack agent",
+      "kind": "slack",
+      "floor": 2,
+      "shirt": "#c084fc",
+      "hair": "fade",
+      "slack": {
+        "channel": "C0BGDDJBCQ0",
+        "mention": "U0BFD1W2PGB",
+        "keyword": null,
+        "tokenEnv": "SLACK_TOKEN",
+        "pollMs": 4000,
+        "timeoutMs": 180000
+      },
+      "_notes": "Same trick as Viktor: no API, so this talks to the Claude Slack app in #ai-team-hq and reads the thread reply. Needs SLACK_TOKEN."
+    },
+    {
+      "id": "slack-ranger",
+      "name": "RANGER (SLACK)",
+      "role": "Research · Relevance AI",
+      "kind": "slack",
+      "floor": 2,
+      "shirt": "#fbbf24",
+      "hair": "cap",
+      "slack": {
+        "channel": "C0BGDDJBCQ0",
+        "mention": "U0BFHB5HAKG",
+        "keyword": "ranger",
+        "tokenEnv": "SLACK_TOKEN",
+        "pollMs": 4000,
+        "timeoutMs": 180000
+      },
+      "_notes": "Relevance AI sub-agent, routed by the 'ranger' keyword right after the mention. Distinct id/name from the API-based 'ranger' agent above so they don't collide. Needs SLACK_TOKEN."
+    },
+    {
+      "id": "slack-ledger",
+      "name": "LEDGER (SLACK)",
+      "role": "Money · Relevance AI",
+      "kind": "slack",
+      "floor": 2,
+      "shirt": "#34d399",
+      "hair": "silver",
+      "slack": {
+        "channel": "C0BGDDJBCQ0",
+        "mention": "U0BFHB5HAKG",
+        "keyword": "ledger",
+        "tokenEnv": "SLACK_TOKEN",
+        "pollMs": 4000,
+        "timeoutMs": 180000
+      },
+      "_notes": "Relevance AI sub-agent, routed by the 'ledger' keyword. Needs SLACK_TOKEN."
+    },
+    {
+      "id": "slack-pixel",
+      "name": "PIXEL (SLACK)",
+      "role": "Design · Relevance AI",
+      "kind": "slack",
+      "floor": 2,
+      "shirt": "#f472b6",
+      "hair": "pink",
+      "slack": {
+        "channel": "C0BGDDJBCQ0",
+        "mention": "U0BFHB5HAKG",
+        "keyword": "pixel",
+        "tokenEnv": "SLACK_TOKEN",
+        "pollMs": 4000,
+        "timeoutMs": 180000
+      },
+      "_notes": "Relevance AI sub-agent, routed by the 'pixel' keyword. Needs SLACK_TOKEN."
+    },
+    {
+      "id": "slack-quill",
+      "name": "QUILL (SLACK)",
+      "role": "Copy · Relevance AI",
+      "kind": "slack",
+      "floor": 2,
+      "shirt": "#c084fc",
+      "hair": "long",
+      "slack": {
+        "channel": "C0BGDDJBCQ0",
+        "mention": "U0BFHB5HAKG",
+        "keyword": "quill",
+        "tokenEnv": "SLACK_TOKEN",
+        "pollMs": 4000,
+        "timeoutMs": 180000
+      },
+      "_notes": "Relevance AI sub-agent, routed by the 'quill' keyword. Needs SLACK_TOKEN."
+    },
+    {
+      "id": "slack-pulse",
+      "name": "PULSE (SLACK)",
+      "role": "Growth · Relevance AI",
+      "kind": "slack",
+      "floor": 3,
+      "shirt": "#22d3ee",
+      "hair": "mint",
+      "slack": {
+        "channel": "C0BGDDJBCQ0",
+        "mention": "U0BFHB5HAKG",
+        "keyword": "pulse",
+        "tokenEnv": "SLACK_TOKEN",
+        "pollMs": 4000,
+        "timeoutMs": 180000
+      },
+      "_notes": "Relevance AI sub-agent, routed by the 'pulse' keyword. Needs SLACK_TOKEN."
+    },
+    {
+      "id": "slack-aero",
+      "name": "AERO (SLACK)",
+      "role": "Reviewer · Relevance AI",
+      "kind": "slack",
+      "floor": 3,
+      "shirt": "#a78bfa",
+      "hair": "curly",
+      "slack": {
+        "channel": "C0BGDDJBCQ0",
+        "mention": "U0BFHB5HAKG",
+        "keyword": "aero",
+        "tokenEnv": "SLACK_TOKEN",
+        "pollMs": 4000,
+        "timeoutMs": 180000
+      },
+      "_notes": "Relevance AI sub-agent, routed by the 'aero' keyword. Needs SLACK_TOKEN."
     }
   ]
 }
