@@ -34,24 +34,41 @@ const OVR_PATH = join(__dirname, 'data', 'overrides.json');
 let CONFIG = { agents: [] };
 async function loadConfig() {
   const p = join(__dirname, 'agents.json');
+  const exPath = join(__dirname, 'agents.example.json');
+  let example = null;
+  try { example = JSON.parse(await readFile(exPath, 'utf8')); } catch {}
+
   if (!existsSync(p)) {
-    const ex = join(__dirname, 'agents.example.json');
-    if (existsSync(ex)) {
-      await writeFile(p, await readFile(ex, 'utf8'));
-      console.log('  created agents.json for you from the example');
-    } else {
+    if (!example) {
       console.error('\n  No agents.json and no agents.example.json. Re-download the folder.\n');
       process.exit(1);
     }
+    await writeFile(p, JSON.stringify(example, null, 2) + '\n');
+    console.log('  created agents.json for you from the example');
   }
+
   CONFIG = JSON.parse(await readFile(p, 'utf8'));
+
+  // Merge in any agents added to the example since your agents.json was made.
+  // Without this, agents shipped in an update never appear, which is exactly
+  // the bug where 21 agents existed in the example but only 6 showed up.
+  if (example && Array.isArray(example.agents)) {
+    const have = new Set(CONFIG.agents.map(a => a.id));
+    const added = example.agents.filter(a => !have.has(a.id));
+    if (added.length) {
+      CONFIG.agents.push(...added);
+      await writeFile(p, JSON.stringify(CONFIG, null, 2) + '\n');
+      console.log('  added ' + added.length + ' new agent(s): ' + added.map(a => a.name).join(', '));
+    }
+  }
+
   for (const a of CONFIG.agents) {
     a.status = a.enabled === false ? 'off' : 'idle';
     a.lastSeen = null;
     a.busy = false;
     a.sessionId = null;
   }
-  console.log(`  loaded ${CONFIG.agents.length} agents from agents.json`);
+  console.log('  loaded ' + CONFIG.agents.length + ' agents from agents.json');
 }
 
 /* ------------------------------------------------------------------ */
@@ -123,9 +140,22 @@ function setStatus(agent, status, note) {
  * Continuity comes from the CLI's own resume flag instead.
  */
 function runCli(agent, prompt, threadId) {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     const cfg = agent.cli;
     const args = [];
+
+    // Optionally prepend a file (e.g. Aside memory) so the agent has real
+    // context without needing a separate API. Only on the first message of a
+    // conversation, since the resumed session already remembers it.
+    if (cfg.prependFile && !agent.sessionId) {
+      try {
+        const fp = cfg.prependFile.replace('~', process.env.HOME || '');
+        const mem = await readFile(fp, 'utf8');
+        prompt = 'Here is what you know about me, read from my Aside memory. ' +
+                 'Speak from it and do not contradict it.\n\n' + mem.slice(0, 7000) +
+                 '\n\n---\n\n' + prompt;
+      } catch {}
+    }
 
     // first message vs continuing an existing conversation
     if (agent.sessionId && cfg.resumeArgs) {

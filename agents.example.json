@@ -12,8 +12,8 @@
     {
       "id": "aside",
       "name": "ASIDE",
-      "role": "Chief of staff · reads my real memory",
-      "kind": "aside",
+      "role": "Chief of staff · no API key needed",
+      "kind": "cli",
       "floor": 1,
       "seat": [
         2,
@@ -22,8 +22,27 @@
       "shirt": "#4ade80",
       "hair": "dark",
       "persona": "You are Aside, Jack's chief of staff and the agent who built this office. Jack is 13, in Toronto, and the boss here — you report to him, he is not an agent. You are direct, concrete and short. No preamble, no padding, never a bulleted list where a sentence works. You tell him plainly when he is wrong or when something you built is not good enough. You never use em dashes or emoji. Everything below this line is your real memory, read off disk, so speak from it rather than guessing.",
-      "_notes": "kind:'aside' loads Jack's real Aside memory (memory/USER.md, MEMORY.md, today's episodic notes and recent session list) as live context on every message. Needs ANTHROPIC_API_KEY.",
-      "model": "claude-sonnet-4-6"
+      "_notes": "Runs through the claude CLI, so it uses your existing claude login and needs NO API key. It prepends your real Aside memory to every message so it knows your projects.",
+      "cli": {
+        "command": "claude",
+        "args": [
+          "--print",
+          "--output-format",
+          "stream-json",
+          "--verbose"
+        ],
+        "resumeArgs": [
+          "--print",
+          "--resume",
+          "{session}",
+          "--output-format",
+          "stream-json",
+          "--verbose"
+        ],
+        "streamJson": true,
+        "cwd": "~",
+        "prependFile": "~/.aside/u/0/memory/USER.md"
+      }
     },
     {
       "id": "claude-code",
@@ -139,7 +158,9 @@
         "model": "claude-sonnet-4-6",
         "keyEnv": "ANTHROPIC_API_KEY",
         "maxTokens": 1200
-      }
+      },
+      "enabled": false,
+      "_notes": "Off until an ANTHROPIC_API_KEY exists. Flip enabled to true then."
     },
     {
       "id": "gpt",
@@ -189,7 +210,9 @@
         "model": "claude-sonnet-4-6",
         "keyEnv": "ANTHROPIC_API_KEY",
         "maxTokens": 1100
-      }
+      },
+      "enabled": false,
+      "_notes": "Off until an ANTHROPIC_API_KEY exists. Flip enabled to true then."
     },
     {
       "id": "ledger",
@@ -205,7 +228,9 @@
         "model": "claude-sonnet-4-6",
         "keyEnv": "ANTHROPIC_API_KEY",
         "maxTokens": 1100
-      }
+      },
+      "enabled": false,
+      "_notes": "Off until an ANTHROPIC_API_KEY exists. Flip enabled to true then."
     },
     {
       "id": "pixel",
@@ -221,7 +246,9 @@
         "model": "claude-sonnet-4-6",
         "keyEnv": "ANTHROPIC_API_KEY",
         "maxTokens": 1100
-      }
+      },
+      "enabled": false,
+      "_notes": "Off until an ANTHROPIC_API_KEY exists. Flip enabled to true then."
     },
     {
       "id": "quill",
@@ -237,7 +264,9 @@
         "model": "claude-sonnet-4-6",
         "keyEnv": "ANTHROPIC_API_KEY",
         "maxTokens": 1100
-      }
+      },
+      "enabled": false,
+      "_notes": "Off until an ANTHROPIC_API_KEY exists. Flip enabled to true then."
     },
     {
       "id": "pulse",
@@ -253,7 +282,9 @@
         "model": "claude-sonnet-4-6",
         "keyEnv": "ANTHROPIC_API_KEY",
         "maxTokens": 1100
-      }
+      },
+      "enabled": false,
+      "_notes": "Off until an ANTHROPIC_API_KEY exists. Flip enabled to true then."
     },
     {
       "id": "aero",
@@ -269,7 +300,9 @@
         "model": "claude-sonnet-4-6",
         "keyEnv": "ANTHROPIC_API_KEY",
         "maxTokens": 1100
-      }
+      },
+      "enabled": false,
+      "_notes": "Off until an ANTHROPIC_API_KEY exists. Flip enabled to true then."
     },
     {
       "id": "viktor",
