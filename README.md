@@ -151,6 +151,40 @@ Pick **ALL-HANDS** at the top of the conversation rail. One message goes to ever
 
 ---
 
+## Connecting Slack
+
+This is how Viktor and the Relevance AI agents get into the office. Neither has an API — they only answer Slack messages — so the adapter posts into a channel and reads the bot's threaded reply back.
+
+### 1. Get a bot token
+
+Create (or reuse) a Slack app for the `Jack` workspace and install it. You need a **bot token** (`xoxb-...`) with these scopes:
+
+- `chat:write` — so it can post the mention into the channel
+- `channels:history` — so it can read replies in a public channel (use `groups:history` instead if `#ai-team-hq` is private)
+
+### 2. Invite the app to the channel
+
+The bot token can only read a channel it has joined. In `#ai-team-hq`, run `/invite @YourAppName` (or add it from the channel's integrations panel) — otherwise every poll comes back empty.
+
+### 3. Set the token and start the server
+
+```bash
+export SLACK_TOKEN=xoxb-...
+node server.mjs
+```
+
+The server calls `auth.test` once at boot and prints the workspace name if the token works. Every Slack-kind agent in `agents.json` reads the same `tokenEnv` (default `SLACK_TOKEN`), so one export covers Viktor, Slack-Claude, and all six Relevance sub-agents.
+
+### 4. How it actually talks to them
+
+On every message, the adapter posts `<@mention> [keyword] <your text>` into the configured channel and remembers the returned `ts` as the thread parent. It then polls `conversations.replies` on that exact `ts` — not `conversations.history` — because these bots reply inside the thread on the message that mentioned them, never in the channel itself. The six Relevance AI sub-agents (Ranger, Ledger, Pixel, Quill, Pulse, Aero) all live behind one Slack app; they're told apart by the keyword typed right after the mention (`ranger`, `ledger`, `pixel`, `quill`, `pulse`, `aero`), and disambiguated by the adapter because each dispatch only ever polls its own thread's `ts` — so several of them can be answering at once with zero cross-talk.
+
+You'll also see short stub replies like "Status: Inactive · View Task" filtered out of the chat — that's the bot acknowledging the mention before its real answer lands, and it's not worth showing.
+
+**Heads up: Viktor is currently out of credits.** He'll reply saying so until that's topped up — that's a real reply from Slack, not a bug in the adapter.
+
+---
+
 ## How it fits together
 
 ```
@@ -189,5 +223,5 @@ The interactive versions of these CLIs are full-screen terminal UIs. Automating 
 ## What's deliberately not here
 
 - **No auth.** This runs on your machine and talks to your CLIs. Don't expose it to the internet.
-- **No Slack bridge yet.** That's the next adapter, and it's the one that brings Viktor and the Relevance agents in. Same shape: `send` posts to a channel, `poll` reads the thread.
+- **Slack bridge is in** (see "Connecting Slack" above) — that's what brings Viktor and the Relevance agents in. Same shape as everything else: `send` posts to a channel, `poll` reads the thread.
 - **No GUI automation.** Clicky and Conductor have no API. Driving their windows would be brittle enough to not be worth it.
