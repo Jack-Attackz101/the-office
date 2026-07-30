@@ -11,17 +11,14 @@
  *   4. streams that log to the browser over Server-Sent Events
  *
  * Adapters:
- *   cli   — spawns a coding-agent CLI per message (claude, codex, gemini…)
- *   api   — talks to Anthropic or OpenAI over HTTP
- *   slack — posts into a Slack channel and polls the thread for a reply
- *           (this is how Viktor and the Relevance AI agents get in —
- *           they have no API of their own, but they do answer Slack)
- *   echo  — a local stub so you can see the UI work with no keys at all
+ *   cli  — spawns a coding-agent CLI per message (claude, codex, gemini…)
+ *   api  — talks to Anthropic or OpenAI over HTTP
+ *   echo — a local stub so you can see the UI work with no keys at all
  */
 
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { extname, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -278,99 +275,79 @@ async function runApi(agent, prompt, threadId) {
   }
 }
 
+
 /* ------------------------------------------------------------------ */
-/* adapter: slack                                                      */
+/* adapter: aside                                                      */
 /* ------------------------------------------------------------------ */
 /**
- * Viktor and the Relevance AI sub-agents have no HTTP API. They do,
- * however, answer when mentioned in a Slack channel. So this adapter
- * fakes an API the way a human would use one: post a message that
- * @-mentions the bot (plus a keyword, for the Relevance sub-agents which
- * all share one Slack app and route by the word right after the mention),
- * then poll the *thread* under that message, because these bots reply in
- * a thread on the message they were mentioned in, not in the channel.
- * conversations.history alone would never see that reply.
+ * The real Aside agent.
+ *
+ * Instead of a hand-written persona that goes stale, this reads Jack's actual
+ * Aside memory and recent session activity off disk every time he sends a
+ * message, and hands it to the model as live context. So it genuinely knows
+ * what his projects are and what was worked on last, rather than guessing.
  */
-const SLACK_SELF_USER = process.env.SLACK_SELF_USER || 'U0BFJPL481F'; // Jack — his own thread messages are never a "reply"
+const ASIDE_ROOT = join(process.env.HOME || '', '.aside', 'u', '0');
 
-async function slackApi(token, method, params) {
-  // conversations.* reads are GET + query string; everything we call to write is POST + JSON.
-  const isRead = method === 'conversations.history' || method === 'conversations.replies';
-  let res;
-  if (isRead) {
-    const qs = new URLSearchParams(params).toString();
-    res = await fetch(`https://slack.com/api/${method}?${qs}`, {
-      headers: { authorization: `Bearer ${token}` },
-    });
-  } else {
-    res = await fetch(`https://slack.com/api/${method}`, {
+async function asideContext() {
+  const parts = [];
+  for (const f of ['memory/USER.md', 'memory/MEMORY.md']) {
+    try {
+      parts.push('### ' + f + '\n' + (await readFile(join(ASIDE_ROOT, f), 'utf8')).slice(0, 6000));
+    } catch {}
+  }
+  // most recent session folders, newest first, as a rough activity trail
+  try {
+    const dirs = (await readdir(join(ASIDE_ROOT, 'sessions'))).sort().reverse().slice(0, 8);
+    if (dirs.length) parts.push('### recent Aside sessions\n' + dirs.join('\n'));
+  } catch {}
+  // today's episodic memory, if one has been written yet
+  try {
+    const d = new Date().toISOString().slice(0, 10);
+    const ep = await readFile(join(ASIDE_ROOT, 'memory', 'episodic', d + '.md'), 'utf8');
+    parts.push('### today (' + d + ')\n' + ep.slice(0, 4000));
+  } catch {}
+  return parts.join('\n\n');
+}
+
+async function runAside(agent, prompt, threadId) {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) {
+    emit({ type: 'msg', agent: agent.id, thread: threadId, role: 'system',
+           text: 'No ANTHROPIC_API_KEY set, so Aside cannot answer. Set it and restart the server.' });
+    setStatus(agent, 'error', 'ANTHROPIC_API_KEY not set');
+    return;
+  }
+  const ctx = await asideContext();
+  const hist = HISTORY.get(agent.id) || [];
+  hist.push({ role: 'user', content: prompt });
+
+  const system =
+    (agent.persona || "You are Aside, Jack's chief of staff.") +
+    '\n\nBelow is your real memory and recent activity, read from disk just now. ' +
+    'Use it. If it contradicts something you would otherwise have assumed, trust the memory. ' +
+    'Never claim to have done something that is not reflected here.\n\n' + ctx;
+
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json; charset=utf-8' },
-      body: JSON.stringify(params || {}),
+      headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: agent.model || 'claude-sonnet-4-6',
+        max_tokens: 1600,
+        system,
+        messages: hist.slice(-20),
+      }),
     });
-  }
-  return res.json();
-}
-
-/** Bots often post a placeholder ("Status: Inactive · View Task…") before the real answer. Hide that noise. */
-function isSlackStub(t) {
-  const s = (t || '').trim();
-  if (s.length >= 40) return false;
-  return /status:/i.test(s) || /view task/i.test(s) || /want to message the agent/i.test(s);
-}
-
-async function runSlack(agent, prompt, threadId) {
-  const cfg = agent.slack;
-  const token = process.env[cfg.tokenEnv];
-  if (!token) {
-    emit({ type: 'msg', agent: agent.id, thread: threadId, role: 'system',
-           text: `No Slack token. Set ${cfg.tokenEnv} in your environment and restart.` });
-    setStatus(agent, 'error', `${cfg.tokenEnv} not set`);
-    return;
-  }
-
-  const text = `<@${cfg.mention}> ${cfg.keyword ? `${cfg.keyword} ` : ''}${prompt}`;
-  const posted = await slackApi(token, 'chat.postMessage', { channel: cfg.channel, text });
-  if (!posted.ok) {
-    emit({ type: 'msg', agent: agent.id, thread: threadId, role: 'system', text: `Slack post failed: ${posted.error}` });
-    setStatus(agent, 'error', posted.error);
-    return;
-  }
-  const parentTs = posted.ts;
-
-  // Why polling only this thread's ts is enough even with several Relevance
-  // sub-agents in flight at once: each call to runSlack posts its own parent
-  // message and gets back its own ts. conversations.replies is scoped to one
-  // parent ts, so this poll can only ever see replies nested under *this*
-  // message — a reply landing on someone else's parallel thread is a
-  // different ts and never shows up here. No cross-agent mixing is possible.
-  const emitted = new Set(); // ts values already shown in the chat — never emit the same reply twice
-  const start = Date.now();
-  let gotRealReply = false;
-
-  while (Date.now() - start < cfg.timeoutMs) {
-    await new Promise(r => setTimeout(r, cfg.pollMs));
-    const rep = await slackApi(token, 'conversations.replies', { channel: cfg.channel, ts: parentTs, limit: 50 });
-    if (!rep.ok) continue; // transient error — try again next poll
-
-    for (const m of rep.messages || []) {
-      if (m.ts === parentTs) continue;           // our own outgoing message
-      if (m.user === SLACK_SELF_USER) continue;   // Jack posting in the thread isn't a reply
-      if (emitted.has(m.ts)) continue;            // already shown
-      if (isSlackStub(m.text)) continue;          // stub placeholder — don't mark as seen, it may be edited into the real answer
-
-      emitted.add(m.ts);
-      gotRealReply = true;
-      emit({ type: 'msg', agent: agent.id, thread: threadId, role: 'agent', text: m.text });
-    }
-
-    if (gotRealReply) break; // got the real answer, stop polling this thread
-  }
-
-  if (!gotRealReply) {
-    emit({ type: 'msg', agent: agent.id, thread: threadId, role: 'system',
-           text: `No reply in the Slack thread after ${(cfg.timeoutMs / 1000).toFixed(0)}s. Check the app is invited to the channel, and that it isn't out of credits.` });
-    setStatus(agent, 'error', 'Slack timeout');
+    const j = await r.json();
+    if (j.error) throw new Error(j.error.message);
+    const text = (j.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
+    hist.push({ role: 'assistant', content: text });
+    HISTORY.set(agent.id, hist);
+    emit({ type: 'msg', agent: agent.id, thread: threadId, role: 'agent', text });
+  } catch (e) {
+    emit({ type: 'msg', agent: agent.id, thread: threadId, role: 'system', text: 'Aside error: ' + e.message });
+    setStatus(agent, 'error', e.message.slice(0, 80));
   }
 }
 
@@ -389,7 +366,7 @@ async function dispatch(agent, prompt, threadId) {
   try {
     if (agent.kind === 'cli') await runCli(agent, prompt, threadId);
     else if (agent.kind === 'api') await runApi(agent, prompt, threadId);
-    else if (agent.kind === 'slack') await runSlack(agent, prompt, threadId);
+    else if (agent.kind === 'aside') await runAside(agent, prompt, threadId);
     else {
       await new Promise(r => setTimeout(r, 600));
       emit({ type: 'msg', agent: agent.id, thread: threadId, role: 'agent',
@@ -426,32 +403,15 @@ async function healthCheck() {
       a.health = process.env[a.api.keyEnv] ? 'ok' : 'missing';
       a.healthNote = process.env[a.api.keyEnv] ? `${a.api.keyEnv} is set` : `${a.api.keyEnv} not set`;
       if (a.health === 'missing') a.status = 'error';
-    } else if (a.kind === 'slack') {
-      a.health = process.env[a.slack.tokenEnv] ? 'ok' : 'missing';
-      a.healthNote = process.env[a.slack.tokenEnv] ? `${a.slack.tokenEnv} is set` : `${a.slack.tokenEnv} not set`;
-      if (a.health === 'missing') a.status = 'error';
+    } else if (a.kind === 'aside') {
+      const hasKey = !!process.env.ANTHROPIC_API_KEY;
+      let hasMem = false;
+      try { await readFile(join(ASIDE_ROOT, 'memory', 'USER.md'), 'utf8'); hasMem = true; } catch {}
+      a.health = hasKey ? 'ok' : 'missing';
+      a.healthNote = (hasKey ? 'ANTHROPIC_API_KEY set' : 'ANTHROPIC_API_KEY not set') +
+                     (hasMem ? ' \u00b7 reading live Aside memory' : ' \u00b7 no Aside memory found');
+      if (!hasKey) a.status = 'error';
     } else { a.health = 'ok'; a.healthNote = 'local stub'; }
-  }
-}
-
-/** Called once at boot: confirm each distinct Slack token actually works, and log which workspace it is. */
-async function slackBootCheck() {
-  const seenEnv = new Set();
-  for (const a of CONFIG.agents) {
-    if (a.kind !== 'slack' || a.enabled === false) continue;
-    const envName = a.slack.tokenEnv;
-    if (seenEnv.has(envName)) continue; // several agents (Relevance sub-agents) share one token
-    seenEnv.add(envName);
-    const token = process.env[envName];
-    if (!token) continue; // already flagged by healthCheck
-    try {
-      const r = await slackApi(token, 'auth.test', {});
-      console.log(r.ok
-        ? `  slack (${envName}): connected to workspace "${r.team}"`
-        : `  slack (${envName}): auth.test failed — ${r.error}`);
-    } catch (e) {
-      console.log(`  slack (${envName}): auth.test error — ${e.message}`);
-    }
   }
 }
 
@@ -590,7 +550,6 @@ await loadOvr();
 applyOvr();
 await loadLog();
 await healthCheck();
-await slackBootCheck();
 
 server.listen(PORT, () => {
   console.log(`\n  THE OFFICE  →  http://localhost:${PORT}\n`);

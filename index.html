@@ -671,6 +671,11 @@ function draw(t){
       g.fillStyle='#fff'; g.fillText(a.name, a.x+8, a.y+32.5);
     }
   }
+  // floor label, bottom-left of the room
+  const FN=FLOORS.find(f=>f.id===FLOOR);
+  g.font='7px Silkscreen, monospace'; g.textAlign='left';
+  P(6,CH-16,FN.name.length*4+34,10,'#0b0f1499');
+  g.fillStyle='#9fabbb'; g.fillText(FLOOR+'F  '+FN.name, 10, CH-8);
   if(!here.length && connected){
     g.font='9px Silkscreen, monospace'; g.textAlign='center'; g.fillStyle='#6b7686';
     g.fillText('NOBODY ON THIS FLOOR', CW/2, CH/2);
@@ -1122,8 +1127,9 @@ function roster(){
   if(!AGENTS.length){ el.innerHTML='<div class="rw" style="color:#5a6576">nobody yet</div>'; return; }
   for(const a of AGENTS){
     const d=document.createElement('div'); d.className='rw';
+    const act = a.status==='working' ? 'at desk' : a.status==='idle' ? 'free' : a.status==='error' ? 'setup' : 'off';
     d.innerHTML=`<span class="rd" style="background:${SC[a.status]||'#5a6576'}"></span>${a.name}
-      <span class="rwact">${(a.floor||1)}F</span>`;
+      <span class="rwact">${act} · ${(a.floor||1)}F</span>`;
     d.onclick=()=>{FLOOR=a.floor||1;floorBtns();openConv(a.id)};
     el.appendChild(d);
   }
