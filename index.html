@@ -204,57 +204,82 @@ const FLOORS=[
 FLOORS[1].accent='#a2793f';
 let FLOOR=1, hover=null, connected=false, AGENTS=[];
 
-/* ---------- room furniture ---------- */
-function wall(x,y,w){ // top face + front face, Modern Interiors style
-  P(x,y,w*T,T,'#e6e2d9'); P(x,y,w*T,3,'#f3f0ea');
-  P(x,y+T,w*T,7,'#c9c3b6'); P(x,y+T+7,w*T,2,'#a9a294');
+/* ---------- room furniture (Modern Interiors reference) ---------- */
+function wall(x,y,w){
+  P(x,y,w*T,T,'#e9e6df'); P(x,y,w*T,3,'#f6f4f0');
+  P(x,y+T,w*T,7,'#cdc8bd'); P(x,y+T+7,w*T,2,'#aaa496');
 }
-function vwall(x,y,h){
-  P(x,y,T,h*T,'#dcd7cc'); P(x,y,3,h*T,'#eae6dd'); P(x+T-2,y,2,h*T,'#bdb7a9');
+function vwall(x,y,h){ P(x,y,T,h*T,'#e2ded6'); P(x,y,3,h*T,'#f0ede7'); P(x+T-2,y,2,h*T,'#c0bbaf'); }
+/** thin interior partition wall with an optional doorway gap */
+function pwall(x,y,len,dir,gapAt){
+  for(let i=0;i<len;i++){
+    if(gapAt!==undefined && (i===gapAt||i===gapAt+1)) continue;
+    if(dir==='h'){ P(x+i*T,y,T,6,'#f2f0ec'); P(x+i*T,y,T,2,'#ffffff'); P(x+i*T,y+6,T,2,'#c4bfb4'); }
+    else { P(x,y+i*T,6,T,'#eae7e1'); P(x,y+i*T,2,T,'#ffffff'); P(x+6,y+i*T,2,T,'#c4bfb4'); }
+  }
 }
 function rug(x,y,w,h,c1,c2){
   P(x,y,w*T,h*T,c1); P(x+2,y+2,w*T-4,h*T-4,c2);
-  for(let i=0;i<w*T;i+=6) P(x+i,y+1,3,1,sh(c1,-18));
+  for(let i=0;i<w*T;i+=6) P(x+i,y+1,3,1,sh(c1,-16));
 }
-function desk(x,y,dir,shirt,on,t){
-  // desk top seen from above
-  P(x,y,T*2,T,'#d9c09a'); P(x,y,T*2,2,'#e8d3b3'); P(x,y+T-2,T*2,2,'#b89a71');
-  // monitor
-  P(x+9,y-9,14,10,'#2f3743'); P(x+10,y-8,12,8, on?'#1c4e86':'#141a22');
-  if(on){ P(x+11,y-7,8,1,'#bcdcff'); P(x+11,y-5,6,1,'#83b6ea'); P(x+11,y-3,9,1,'#5f92c9'); }
-  P(x+14,y+1,4,2,'#4d5665');
-  // keyboard + mouse
-  P(x+7,y+5,12,4,'#eceff4'); P(x+21,y+5,3,4,'#eceff4');
-  // mug + papers
-  P(x+2,y+3,4,4,shirt); P(x+25,y+2,5,6,'#fbfcfe');
-}
+/** big top-down office chair, the signature prop in the reference */
 function chair(x,y,c){
-  P(x+3,y,10,9,c||'#4a5261'); P(x+3,y,10,2,sh(c||'#4a5261',16));
-  P(x+1,y+2,2,6,sh(c||'#4a5261',-14)); P(x+13,y+2,2,6,sh(c||'#4a5261',-14));
-  P(x+6,y+9,4,3,'#39404d');
+  const b=c||'#5a616e';
+  P(x+1,y+3,14,12,sh(b,-16));          // backrest slab
+  P(x+1,y+3,14,3,sh(b,10));
+  P(x+3,y+6,10,8,b);                    // seat
+  P(x+3,y+6,10,2,sh(b,16));
+  P(x,y+6,2,6,sh(b,-24)); P(x+14,y+6,2,6,sh(b,-24));   // armrests
+  P(x+6,y+15,4,3,'#3b414c');                            // post
+  P(x+3,y+17,10,2,'#454c58'); P(x+2,y+18,12,1,'#3b414c'); // base
+}
+/** shared bench desk: one long surface, a hutch behind it, N seats */
+function bench(x,y,seats,tint,on,t){
+  const w=seats*2*T;
+  P(x,y-9,w,9,'#c8ad83'); P(x,y-9,w,2,'#dcc49c'); P(x,y-1,w,2,'#a98c63');  // hutch
+  P(x,y,w,T+4,'#dfe3e9'); P(x,y,w,3,'#eef1f5'); P(x,y+T+1,w,3,'#b9bfc9');  // desktop
+  for(let s=0;s<seats;s++){
+    const sx=x+s*2*T;
+    P(sx+3,y-16,17,10,'#39414f');                         // monitor
+    P(sx+4,y-15,15,8, on?'#1f5da0':'#171d26');
+    if(on){ P(sx+5,y-14,10,1,'#cfe6ff'); P(sx+5,y-12,7,1,'#8fc0ee');
+            P(sx+5,y-10,12,1,'#63a0d6');
+            const k=Math.floor(t/230+s)%3; P(sx+5,y-8+k,5,1,'#a9d4ff'); }
+    P(sx+10,y-6,3,2,'#4b5462');
+    P(sx+5,y+4,14,5,'#f4f7fa'); P(sx+6,y+5,12,1,'#c8cfd8');  // keyboard
+    P(sx+21,y+4,4,5,'#f4f7fa');                               // mouse
+    P(sx+24,y-4,7,8,'#fbfcfe'); P(sx+25,y-3,5,1,'#b9c2cd');   // papers
+    if(s%2===0) P(sx+1,y+2,4,5,tint);                          // mug
+  }
+  P(x,y-9,2,T+13,'#9aa2ae'); P(x+w-2,y-9,2,T+13,'#9aa2ae');   // side frames
 }
 function plant(x,y,k){
-  P(x+4,y+9,8,7,'#a9724c'); P(x+4,y+9,8,2,'#c2865d');
+  P(x+4,y+9,8,7,'#a9724c'); P(x+4,y+9,8,2,'#c2865d'); P(x+4,y+15,8,1,'#8a5c3c');
   if(k===0){ P(x+2,y+1,12,9,'#3d9c5c'); P(x+5,y-3,6,5,'#4ab36c'); P(x+7,y-6,2,4,'#3d9c5c'); }
   if(k===1){ P(x+3,y+3,10,7,'#2f8a4e'); P(x,y+1,4,6,'#3d9c5c'); P(x+12,y+1,4,6,'#3d9c5c'); P(x+6,y-2,4,5,'#4ab36c'); }
   if(k===2){ P(x+5,y-1,6,11,'#357f49'); P(x+2,y+2,4,4,'#3d9c5c'); P(x+10,y+4,4,4,'#3d9c5c'); P(x+6,y-5,4,4,'#57c47d'); }
 }
 function cooler(x,y){ P(x+3,y+5,10,11,'#e7ecf3'); P(x+3,y+5,10,2,'#f5f8fb'); P(x+4,y-4,8,9,'#8ed8f8'); P(x+4,y-4,8,2,'#c3ecff'); }
 function cabinet(x,y){ P(x,y,T,T+4,'#b9bfc9'); P(x,y,T,2,'#ccd2da'); for(let i=0;i<3;i++){P(x+2,y+3+i*5,12,3,'#9aa1ad'); P(x+7,y+4+i*5,3,1,'#e4e8ee');} }
-function printer(x,y){ P(x,y,T+8,T+2,'#dfe4ea'); P(x,y,T+8,2,'#eef1f5'); P(x+3,y-3,18,4,'#fbfcfe'); P(x+16,y+5,3,2,'#32d74b'); }
-function sofa(x,y,c){
-  P(x,y,T*3,T,c); P(x,y,T*3,3,sh(c,18)); P(x,y-6,T*3,7,sh(c,-14));
-  P(x,y,4,T,sh(c,-20)); P(x+T*3-4,y,4,T,sh(c,-20));
-  P(x+6,y+3,12,8,sh(c,12)); P(x+T*3-18,y+3,12,8,sh(c,12));
+function printer(x,y){
+  P(x,y,T+12,T+6,'#e7ebf1'); P(x,y,T+12,3,'#f3f6f9'); P(x,y+T+3,T+12,3,'#bcc3cd');
+  P(x+4,y-4,20,5,'#fbfcfe'); P(x+20,y+7,3,2,'#32d74b'); P(x+3,y+7,10,3,'#c2c9d3');
 }
-function bigTable(x,y,w,h){ P(x,y,w*T,h*T,'#a97f4f'); P(x,y,w*T,3,'#c1975f'); P(x+3,y+3,w*T-6,h*T-6,'#b98a58'); }
+function sofa(x,y,c){
+  P(x,y-7,T*3,8,sh(c,-16)); P(x,y-7,T*3,2,sh(c,6));
+  P(x,y,T*3,T+2,c); P(x,y,T*3,3,sh(c,18));
+  P(x,y-7,5,T+9,sh(c,-24)); P(x+T*3-5,y-7,5,T+9,sh(c,-24));
+  P(x+7,y+3,13,9,sh(c,12)); P(x+T*3-20,y+3,13,9,sh(c,12));
+}
+function bigTable(x,y,w,h){ P(x,y,w*T,h*T,'#b08757'); P(x,y,w*T,3,'#c99a63'); P(x+3,y+3,w*T-6,h*T-6,'#bd9260'); }
 function rack(x,y,t){
   P(x,y,T,T*2,'#242b36'); P(x,y,T,2,'#333c4a');
   for(let i=0;i<8;i++){ const on=(Math.floor(t/340)+i*3)%5!==0;
     P(x+2,y+3+i*3,12,2,'#333c4a'); P(x+3,y+3+i*3,2,1,on?'#32d74b':'#1a3c25'); P(x+7,y+3+i*3,2,1,(i+Math.floor(t/520))%3?'#0a84ff':'#123049'); }
 }
-function whiteboard(x,y){ P(x,y,T*3,12,'#f7f9fc'); P(x,y,T*3,2,'#fff'); P(x,y+10,T*3,2,'#c3ccd8');
-  P(x+4,y+3,14,2,'#32d74b'); P(x+4,y+6,22,2,'#0a84ff'); P(x+30,y+3,10,2,'#ff453a'); }
+function whiteboard(x,y){ P(x,y,T*4,13,'#f8fafc'); P(x,y,T*4,2,'#fff'); P(x,y+11,T*4,2,'#c3ccd8');
+  P(x+4,y+3,16,2,'#32d74b'); P(x+4,y+6,26,2,'#0a84ff'); P(x+36,y+3,12,2,'#ff453a'); }
+function tvBoard(x,y){ P(x,y,T*4,15,'#2b323d'); P(x+2,y+2,T*4-4,11,'#455063'); P(x+4,y+4,18,2,'#7fb0e0'); }
 function windowT(x,y,w){ P(x,y+2,w*T,11,'#8fc9ec'); P(x,y+2,w*T,2,'#c2e6fa'); P(x,y+8,w*T,1,'#e9eef4');
   for(let i=1;i<w;i++) P(x+i*T,y+2,2,11,'#e9eef4'); }
 function counter(x,y,w){ P(x,y,w*T,T,'#e9e2d4'); P(x,y,w*T,3,'#f4efe4'); P(x,y+T-3,w*T,3,'#c9c0ae');
@@ -331,7 +356,7 @@ function chibi(x,y,a,t,facing){
   g.globalAlpha=.35; P(x+3,yy+8,2,2,'#e8896f'); P(x+11,yy+8,2,2,'#e8896f'); g.globalAlpha=1;
 
   // status icon floating above
-  icon(x+3, yy-13, a.status==='working' ? (a.moving?'coffee':'working') : a.status, t);
+  icon(x+17, yy+1, a.status==='working' ? (a.moving?'coffee':'working') : a.status, t);
 }
 
 /* ---------- activity + movement ---------- */
@@ -371,63 +396,57 @@ function stepAgent(a,dt,t){
 /* ---------- floor rendering ---------- */
 function drawFloor(t){
   const F=FLOORS.find(f=>f.id===FLOOR);
-  // floor tiles
   for(let y=0;y<MH;y++) for(let x=0;x<MW;x++){
     P(x*T,y*T,T,T,(x+y)%2?F.floor2:F.floor);
-    P(x*T,y*T,T,1,sh(F.floor,-22)); P(x*T,y*T,1,T,sh(F.floor,-22));
-    P(x*T+1,y*T+1,1,1,sh(F.floor,14));
+    P(x*T,y*T,T,1,sh(F.floor,-20)); P(x*T,y*T,1,T,sh(F.floor,-20));
+    P(x*T+1,y*T+1,1,1,sh(F.floor,12));
   }
-  // outer walls
   wall(0,0,MW); vwall(0,0,MH); vwall((MW-1)*T,0,MH);
-  P(0,(MH-1)*T+8,MW*T,8,'#c9c3b6');
+  P(0,(MH-1)*T+8,MW*T,8,'#cdc8bd');
 
   if(FLOOR===1){
-    windowT(4*T,2,6); windowT(18*T,2,5); whiteboard(11*T,26);
-    // six cubicles: partition walls
-    for(const [cx,cy] of [[4,6],[10,6],[16,6],[22,6],[4,14],[10,14],[16,14],[22,14]]){
-      // cubicle panels: thicker, with a top highlight so they read as walls
-      P(cx*T-8,cy*T-10,6*T,7,'#98a1af'); P(cx*T-8,cy*T-10,6*T,2,'#bcc4d0'); P(cx*T-8,cy*T-4,6*T,1,'#7d8695');
-      P(cx*T-8,cy*T-10,7,6*T,'#98a1af'); P(cx*T-8,cy*T-10,2,6*T,'#bcc4d0');
+    windowT(3*T,2,5); windowT(15*T,2,4); tvBoard(9*T,24); whiteboard(21*T,24);
+    // two rows of shared bench desks, exactly like the reference
+    bench(3*T,6*T,3,'#e0714f',true,t);
+    bench(13*T,6*T,3,'#5fa8d3',true,t);
+    bench(3*T,14*T,3,'#7fc08a',true,t);
+    bench(13*T,14*T,3,'#d3a05f',true,t);
+    // right-hand service strip
+    printer(30*T,4*T); cabinet(30*T,9*T); cabinet(31*T,9*T); cooler(33*T,12*T);
+    plant(29*T,2*T,0); plant(34*T,7*T,1); plant(34*T,20*T,2); plant(1*T,11*T,1);
+    box(31*T,20*T); box(32*T+5,21*T); bottle(30*T,3*T);
+    // break room across the bottom, different floor
+    pwall(0,20*T-8,MW,'h',7);
+    for(let y=21;y<MH-1;y++) for(let x=1;x<MW-1;x++){
+      P(x*T,y*T,T,T,(x+y)%2?'#c0a98c':'#b8a184'); P(x*T,y*T,T,1,'#a8906f');
     }
-    // carpet runners down the aisles so the floor isn't a grey desert
-    rug(2*T,11*T,26,2,'#8b98a8','#828fa0');
-    rug(2*T,19*T,26,2,'#8b98a8','#828fa0');
-    // kitchen strip, right
-    P(28*T,T,MW*T-28*T-T,8*T,'#ddd6c8');
-    counter(29*T,2*T,3); fridge(33*T,2*T); cooler(30*T,5*T);
-    bigTable(31*T,6*T,2,2); chair(31*T,8*T+2,'#8a6a49'); chair(33*T,8*T+2,'#8a6a49');
-    // clutter
-    cabinet(2*T,3*T); cabinet(3*T,3*T); cabinet(4*T,3*T); printer(29*T,13*T);
-    plant(1*T,17*T,1); plant(26*T,3*T,0); plant(34*T,20*T,2); plant(1*T,9*T,0);
-    plant(27*T,11*T,2); plant(27*T,19*T,1); plant(14*T,3*T,0);
-    box(30*T,20*T); box(31*T+4,21*T); box(29*T,21*T); bottle(30*T,3*T-6); bottle(2*T,15*T);
-    // meeting nook, front-left
-    rug(3*T,21*T,10,2,'#7d8fa2','#75879a');
-    sofa(4*T,21*T,'#4a6fa5'); bigTable(8*T,21*T,2,2); plant(11*T,21*T,1);
-    // print + supply corner, front-right
-    cabinet(32*T,13*T); cabinet(33*T,13*T); cooler(35*T,15*T);
+    counter(2*T,21*T,3); fridge(6*T,21*T);
+    rug(10*T,21*T,7,2,'#8b98a8','#828fa0');
+    sofa(11*T,21*T,'#4a6fa5'); bigTable(15*T,21*T,2,2);
+    plant(9*T,21*T,0); plant(19*T,21*T,2);
   }
   if(FLOOR===2){
     windowT(3*T,2,7); windowT(20*T,2,6);
-    rug(5*T,9*T,12,7,'#a8825c','#9c7852');
-    sofa(6*T,11*T,'#7a5a86'); sofa(12*T,11*T,'#5a7a86');
-    bigTable(9*T,14*T,3,2);
-    counter(27*T,2*T,4); fridge(32*T,2*T); plant(25*T,4*T,1);
-    plant(2*T,18*T,2); plant(33*T,17*T,0); plant(19*T,6*T,1);
-    box(30*T,18*T); bottle(28*T,3*T-6); cabinet(35*T,8*T);
-    whiteboard(5*T,26);
+    bench(4*T,6*T,3,'#b07fd3',true,t); bench(15*T,6*T,3,'#7fd3c0',true,t);
+    rug(5*T,13*T,13,7,'#a8825c','#9c7852');
+    sofa(6*T,15*T,'#7a5a86'); sofa(13*T,15*T,'#5a7a86'); bigTable(10*T,18*T,3,2);
+    counter(28*T,2*T,4); fridge(33*T,2*T); cooler(27*T,6*T);
+    plant(25*T,4*T,1); plant(2*T,20*T,2); plant(34*T,17*T,0); plant(20*T,10*T,1);
+    box(30*T,18*T); bottle(29*T,3*T); cabinet(35*T,8*T); printer(30*T,10*T);
+    whiteboard(5*T,24);
   }
   if(FLOOR===3){
     windowT(24*T,2,8);
-    bigTable(12*T,8*T,9,5); 
-    for(let i=0;i<5;i++){ chair(12*T+i*2*T,7*T-6,'#4a5261'); chair(12*T+i*2*T,13*T+2,'#4a5261'); }
-    whiteboard(8*T,26); 
-    // server room right
-    P(28*T,T,MW*T-28*T-T,8*T,'#46505f');
+    bigTable(11*T,8*T,10,5);
+    for(let i=0;i<5;i++){ chair(11*T+i*2*T,7*T-14,'#5a616e'); chair(11*T+i*2*T,13*T+2,'#5a616e'); }
+    whiteboard(6*T,24); tvBoard(16*T,24);
+    pwall(27*T,T,10,'v',4);
+    P(28*T,T,MW*T-28*T-T,9*T,'#46505f');
     for(let i=0;i<4;i++) rack(29*T+i*2*T,2*T,t);
-    plant(3*T,6*T,2); plant(3*T,16*T,1); plant(34*T,18*T,0);
-    rug(5*T,17*T,7,4,'#8b9aa8','#82919f');
-    sofa(6*T,18*T,'#5f6f86');
+    bench(3*T,16*T,2,'#d3805f',true,t);
+    plant(3*T,5*T,2); plant(3*T,11*T,1); plant(34*T,18*T,0);
+    rug(14*T,17*T,8,4,'#8b9aa8','#82919f'); sofa(15*T,18*T,'#5f6f86');
+    cooler(24*T,14*T); box(25*T,20*T);
   }
 }
 
@@ -439,13 +458,11 @@ function draw(t){
   drawFloor(t);
 
   const here=AGENTS.filter(a=>(a.floor||1)===FLOOR);
-  for(const a of here){
-    stepAgent(a,dt,t);
-    desk(a.deskX-8, a.deskY-6, 0, a.shirt, a.status!=='off', t);
-  }
+  for(const a of here) stepAgent(a,dt,t);
   // draw people sorted by y so lower ones overlap
   for(const a of here.slice().sort((p,q)=>p.y-q.y)){
-    if(!a.moving && Math.abs(a.x-a.deskX)<2 && Math.abs(a.y-a.deskY)<2) chair(a.x, a.y+12,'#4a5261');
+    const seated = !a.moving && Math.abs(a.x-a.deskX)<2 && Math.abs(a.y-a.deskY)<2;
+    if(seated) chair(a.x, a.y+6,'#5a616e');
     chibi(a.x, a.y, a, t);
     if(hover===a){
       g.strokeStyle='#0a84ff'; g.lineWidth=1;
@@ -564,15 +581,20 @@ async function sendMsg(){
 
 /* ---------- server ---------- */
 function seatAgents(){
-  const seats={
-    1:[[4,7],[10,7],[16,7],[4,15],[10,15],[16,15],[22,7],[22,15]],
-    2:[[4,6],[9,6],[14,6],[4,20],[9,20],[14,20],[19,6],[19,20]],
-    3:[[4,7],[4,13],[4,19],[24,16],[28,16],[32,16],[24,20],[28,20]],
+  // pixel seat positions, one per bench place
+  const b=(bx,by,n)=>Array.from({length:n},(_,s)=>[bx*T+s*2*T+4, by*T+T+12]);
+  const SEATS={
+    1:[...b(3,6,3), ...b(13,6,3), ...b(3,14,3), ...b(13,14,3)],
+    2:[...b(4,6,3), ...b(15,6,3), [7*T,16*T],[14*T,16*T],[11*T,19*T]],
+    3:[[11*T,7*T-4],[13*T,7*T-4],[15*T,7*T-4],[17*T,7*T-4],[19*T,7*T-4],
+       [11*T,13*T+8],[13*T,13*T+8],[15*T,13*T+8],[17*T,13*T+8],[19*T,13*T+8],
+       ...b(3,16,2)],
   };
   const used={1:0,2:0,3:0};
   for(const a of AGENTS){
-    const f=a.floor||1; const s=(seats[f]||seats[1])[used[f]++ % (seats[f]||seats[1]).length];
-    a.deskX=s[0]*T; a.deskY=s[1]*T;
+    const f=a.floor||1; const list=SEATS[f]||SEATS[1];
+    const s=list[used[f]++ % list.length];
+    a.deskX=s[0]; a.deskY=s[1];
     if(a.x===undefined){ a.x=a.deskX; a.y=a.deskY; }
     a.seedB = a.seedB ?? Math.random()*6;
   }
