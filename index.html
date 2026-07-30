@@ -160,13 +160,16 @@ canvas{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);image-r
 .hot{color:var(--bad);font-family:var(--px);font-size:11px}
 .wide{display:block;width:calc(100% - 24px);margin:14px 12px;padding:10px;background:#33202a;border:1px solid #4a2b35;
  color:#ff9f9f;font-family:var(--px);font-size:9px;border-radius:9px;cursor:pointer}
-#roster{position:absolute;left:12px;bottom:12px;z-index:25;background:#05070ae8;border:1px solid var(--line);
- border-radius:11px;padding:10px 12px;min-width:196px}
+#roster{position:absolute;left:12px;bottom:12px;z-index:25;background:#05070af0;border:1px solid var(--line);
+ border-radius:11px;padding:10px 12px;min-width:206px;max-height:46vh;display:flex;flex-direction:column}
+#rl{overflow-y:auto;flex:1;margin:-2px -4px 0;padding:2px 4px 0}
+#rl::-webkit-scrollbar{width:4px}#rl::-webkit-scrollbar-thumb{background:#2a3240;border-radius:3px}
 #roster h4{font-family:var(--px);font-size:8px;color:var(--dimmer);margin-bottom:8px}
 .rw{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--dim);margin:4px 0;cursor:pointer}
 .rw:hover{color:var(--ink)}
 .rd{width:7px;height:7px;border-radius:4px;flex:0 0 7px}
 .rwact{margin-left:auto;font-family:var(--px);font-size:7px;color:var(--dimmer)}
+.rfh{font-family:var(--px);font-size:7px;color:#3f4a5a;margin:7px 0 2px;letter-spacing:.6px}
 #hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:25;font-family:var(--px);
  font-size:8px;color:var(--dimmer);background:#05070acc;border:1px solid var(--line);padding:7px 12px;border-radius:7px}
 @media(max-width:960px){#roster,#hint{display:none}#msgr.open{width:100%;flex-basis:100%}#rail{display:none}}
@@ -620,8 +623,9 @@ function drawFloor(t){
   if(FLOOR===2){
     windowT(3*T,2,7); windowT(20*T,2,6);
     bench(4*T,6*T,3,'#b07fd3',true,t); bench(15*T,6*T,3,'#7fd3c0',true,t);
-    rug(5*T,13*T,13,7,'#a8825c','#9c7852');
-    sofa(6*T,15*T,'#7a5a86'); sofa(13*T,15*T,'#5a7a86'); bigTable(10*T,18*T,3,2);
+    bench(4*T,10*T,3,'#d3b07f',true,t); bench(15*T,10*T,3,'#7f9fd3',true,t);
+    rug(5*T,15*T,13,6,'#a8825c','#9c7852');
+    sofa(6*T,17*T,'#7a5a86'); sofa(13*T,17*T,'#5a7a86'); bigTable(10*T,20*T,3,2);
     counter(28*T,2*T,4); fridge(33*T,2*T); cooler(27*T,6*T);
     plant(25*T,4*T,1); plant(2*T,20*T,2); plant(34*T,17*T,0); plant(20*T,10*T,1);
     box(30*T,18*T); bottle(29*T,3*T); cabinet(35*T,8*T); printer(30*T,10*T);
@@ -1044,10 +1048,10 @@ async function wipe(){ TH={};UNREAD={};renderPhone();try{await fetch(API+'/api/r
 function seatList(f){ return SEATS[f]||SEATS[1]; }
 const _b=(bx,by,n)=>Array.from({length:n},(_,s)=>[bx*T+s*2*T+4, by*T+T+3]);
 const SEATS={
-    1:[..._b(3,6,3), ..._b(13,6,3), ..._b(24,6,2), ..._b(3,14,3), ..._b(13,14,3), ..._b(24,14,2)],
-    2:[..._b(4,6,3), ..._b(15,6,3), [7*T,16*T],[14*T,16*T],[11*T,19*T]],
-    3:[[11*T,7*T-4],[13*T,7*T-4],[15*T,7*T-4],[17*T,7*T-4],[19*T,7*T-4],
-       [11*T,13*T+8],[13*T,13*T+8],[15*T,13*T+8],[17*T,13*T+8],[19*T,13*T+8],
+    1:[..._b(3,6,3), ..._b(13,6,3), ..._b(3,14,3), ..._b(13,14,3)],
+    2:[..._b(4,6,3), ..._b(15,6,3), ..._b(4,10,3), ..._b(15,10,3)],
+    3:[[11*T+4,7*T-6],[13*T+4,7*T-6],[15*T+4,7*T-6],[17*T+4,7*T-6],[19*T+4,7*T-6],
+       [11*T+4,13*T+10],[13*T+4,13*T+10],[15*T+4,13*T+10],[17*T+4,13*T+10],[19*T+4,13*T+10],
        ..._b(3,16,2)],
 };
 function seatAgents(){
@@ -1125,11 +1129,15 @@ function floorBtns(){
 function roster(){
   const el=document.getElementById('rl'); el.innerHTML='';
   if(!AGENTS.length){ el.innerHTML='<div class="rw" style="color:#5a6576">nobody yet</div>'; return; }
-  for(const a of AGENTS){
+  const sorted=AGENTS.slice().sort((p,q)=>((p.floor||1)-(q.floor||1))||p.name.localeCompare(q.name));
+  let lastF=null;
+  for(const a of sorted){
+    const f=a.floor||1;
+    if(f!==lastF){ const h=document.createElement('div'); h.className='rfh'; h.textContent=f+'F'; el.appendChild(h); lastF=f; }
     const d=document.createElement('div'); d.className='rw';
     const act = a.status==='working' ? 'at desk' : a.status==='idle' ? 'free' : a.status==='error' ? 'setup' : 'off';
     d.innerHTML=`<span class="rd" style="background:${SC[a.status]||'#5a6576'}"></span>${a.name}
-      <span class="rwact">${act} · ${(a.floor||1)}F</span>`;
+      <span class="rwact">${act}</span>`;
     d.onclick=()=>{FLOOR=a.floor||1;floorBtns();openConv(a.id)};
     el.appendChild(d);
   }
