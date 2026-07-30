@@ -1,0 +1,116 @@
+{
+  "_readme": [
+    "Copy this file to agents.json and edit it. Every agent needs: id, name, role, kind, seat, floor.",
+    "seat is [column, row] on the office grid. floor is 1 or 2.",
+    "kind is 'cli', 'api' or 'echo'. Set enabled:false to give an agent a desk but leave it dark.",
+    "All CLI commands below were verified against the official docs on 29 July 2026."
+  ],
+
+  "agents": [
+    {
+      "id": "claude-code",
+      "name": "CLAUDE",
+      "role": "Coding agent · CLI",
+      "kind": "cli",
+      "floor": 1,
+      "seat": [4, 3],
+      "shirt": "#c084fc",
+      "hair": "dark",
+      "cli": {
+        "command": "claude",
+        "args": ["--print", "--output-format", "stream-json", "--verbose"],
+        "resumeArgs": ["--print", "--resume", "{session}", "--output-format", "stream-json", "--verbose"],
+        "streamJson": true,
+        "cwd": "~"
+      },
+      "_notes": "Auth: either an existing `claude login` session, or ANTHROPIC_API_KEY. No git repo needed. Set cwd to a project folder if you want it to see that code."
+    },
+
+    {
+      "id": "codex",
+      "name": "CODEX",
+      "role": "Coding agent · CLI",
+      "kind": "cli",
+      "floor": 1,
+      "seat": [7, 3],
+      "shirt": "#5eead4",
+      "hair": "fade",
+      "cli": {
+        "command": "codex",
+        "args": ["exec", "--json", "--skip-git-repo-check"],
+        "resumeArgs": ["exec", "resume", "--last", "--json", "--skip-git-repo-check"],
+        "streamJson": true,
+        "cwd": "~"
+      },
+      "_notes": "Auth: `codex login`, or CODEX_API_KEY (exec only, not OPENAI_API_KEY). Codex normally refuses to run outside a git repo, hence --skip-git-repo-check. Add --sandbox workspace-write to args if you want it to edit files."
+    },
+
+    {
+      "id": "gemini",
+      "name": "GEMINI",
+      "role": "Coding agent · CLI",
+      "kind": "cli",
+      "enabled": false,
+      "floor": 1,
+      "seat": [10, 3],
+      "shirt": "#93c5fd",
+      "hair": "long",
+      "cli": {
+        "command": "gemini",
+        "args": ["--output-format", "stream-json", "-p"],
+        "resumeArgs": ["--output-format", "stream-json", "--resume", "latest", "-p"],
+        "streamJson": true,
+        "cwd": "~"
+      },
+      "_notes": "Off by default. --output-format is version-sensitive and errors on some builds. Auth: GEMINI_API_KEY. Test `gemini --output-format json -p hi` in a terminal before enabling."
+    },
+
+    {
+      "id": "sonnet",
+      "name": "SONNET",
+      "role": "Anthropic API",
+      "kind": "api",
+      "floor": 1,
+      "seat": [4, 7],
+      "shirt": "#4ade80",
+      "hair": "curly",
+      "persona": "You are Sonnet, an agent sitting in Jack's pixel-art office. Jack is 13, builds real products, and hates padding. Be direct, concrete and short. No preamble, no bullet-point vomit. If you don't know something, say so in one line.",
+      "api": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-6",
+        "keyEnv": "ANTHROPIC_API_KEY",
+        "maxTokens": 1200
+      }
+    },
+
+    {
+      "id": "gpt",
+      "name": "GPT",
+      "role": "OpenAI API",
+      "kind": "api",
+      "floor": 1,
+      "seat": [7, 7],
+      "shirt": "#fbbf24",
+      "hair": "short",
+      "persona": "You are GPT, an agent in Jack's pixel-art office. Keep answers tight and useful. Jack is 13 and ships real products; skip the hedging.",
+      "api": {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "keyEnv": "OPENAI_API_KEY",
+        "maxTokens": 1200
+      }
+    },
+
+    {
+      "id": "echo",
+      "name": "ECHO",
+      "role": "Local test stub",
+      "kind": "echo",
+      "floor": 1,
+      "seat": [10, 7],
+      "shirt": "#94a3b8",
+      "hair": "cap",
+      "_notes": "Needs no keys and no CLI. Talk to this one first to prove the office and the chat work end to end."
+    }
+  ]
+}
