@@ -18,7 +18,7 @@
 
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
-import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir, stat, open } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { extname, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -488,6 +488,186 @@ async function runSlack(agent, prompt, threadId) {
 }
 
 /* ------------------------------------------------------------------ */
+/* transcript watching                                                 */
+/* ------------------------------------------------------------------ */
+/**
+ * Claude Code writes every session to disk as JSONL at
+ *   ~/.claude/projects/<cwd with non-alphanumerics turned into dashes>/<session>.jsonl
+ * and each line is one event. Assistant lines carry content blocks, and a
+ * `tool_use` block names the tool it just reached for.
+ *
+ * Reading that lets a character show what it is ACTUALLY doing (reading a
+ * file, editing, running a command) instead of a flat "working". Nothing is
+ * written and Claude Code is not modified, so this is purely observational.
+ *
+ * Caveat worth knowing: Anthropic documents this file as internal and says
+ * the shape can change between releases. So every access is defensive and a
+ * parse failure simply falls back to plain "working" rather than throwing.
+ */
+
+const CLAUDE_HOME = process.env.CLAUDE_CONFIG_DIR ||
+                    join(process.env.HOME || '', '.claude');
+
+/** the folder name Claude Code derives from a working directory */
+function mungeCwd(dir) {
+  return dir.replace(/[^a-zA-Z0-9]/g, '-');
+}
+
+/** map a tool name onto something a character can visibly do */
+function toolToActivity(name) {
+  switch (name) {
+    case 'Read': case 'Glob': case 'Grep': case 'NotebookRead':
+      return { activity: 'reading',    verb: 'reading' };
+    case 'Edit': case 'Write': case 'MultiEdit': case 'NotebookEdit':
+      return { activity: 'writing',    verb: 'editing' };
+    case 'Bash': case 'BashOutput': case 'KillShell':
+      return { activity: 'running',    verb: 'running a command' };
+    case 'Task':
+      return { activity: 'delegating', verb: 'handing off to a sub-agent' };
+    case 'WebFetch': case 'WebSearch':
+      return { activity: 'searching',  verb: 'looking something up' };
+    case 'TodoWrite':
+      return { activity: 'planning',   verb: 'planning' };
+    default:
+      return { activity: 'working',    verb: name ? 'using ' + name : 'working' };
+  }
+}
+
+/** a short, human label for what the tool was pointed at */
+function toolDetail(name, input) {
+  if (!input || typeof input !== 'object') return '';
+  const base = (p) => String(p).split('/').filter(Boolean).pop() || '';
+  if (input.file_path)     return base(input.file_path);
+  if (input.notebook_path) return base(input.notebook_path);
+  if (input.pattern)       return String(input.pattern).slice(0, 28);
+  if (input.command)       return String(input.command).split(/\s+/).slice(0, 3).join(' ').slice(0, 28);
+  if (input.url)           { try { return new URL(input.url).hostname; } catch { return ''; } }
+  if (input.query)         return String(input.query).slice(0, 28);
+  if (input.description)   return String(input.description).slice(0, 28);
+  return '';
+}
+
+/**
+ * Find the transcript file for an agent. Prefers an exact session id match,
+ * otherwise takes the most recently modified transcript for that directory.
+ */
+async function findTranscript(agent) {
+  const dir = join(CLAUDE_HOME, 'projects', mungeCwd(resolveCwd(agent)));
+  let names;
+  try { names = await readdir(dir); } catch { return null; }
+  const jsonl = names.filter(n => n.endsWith('.jsonl') &&
+                                  !n.startsWith('agent-') &&
+                                  !n.includes('warmup'));
+  if (!jsonl.length) return null;
+
+  if (agent.sessionId) {
+    const exact = jsonl.find(n => n === agent.sessionId + '.jsonl');
+    if (exact) return join(dir, exact);
+  }
+  // newest wins
+  let best = null, bestAt = -1;
+  for (const n of jsonl) {
+    try {
+      const st = await stat(join(dir, n));
+      if (st.mtimeMs > bestAt) { bestAt = st.mtimeMs; best = join(dir, n); }
+    } catch {}
+  }
+  return best;
+}
+
+/** the working directory an agent runs in, with ~ expanded */
+function resolveCwd(agent) {
+  const raw = (agent.cli && agent.cli.cwd) || process.cwd();
+  return raw.replace(/^~/, process.env.HOME || '');
+}
+
+/**
+ * Read the tail of a file without loading all of it. Transcripts can reach
+ * tens of megabytes in a long session, so only the last slice is examined.
+ */
+async function tailBytes(file, bytes = 96 * 1024) {
+  const st = await stat(file);
+  const start = Math.max(0, st.size - bytes);
+  const fh = await open(file, 'r');
+  try {
+    const buf = Buffer.alloc(st.size - start);
+    await fh.read(buf, 0, buf.length, start);
+    return { text: buf.toString('utf8'), size: st.size };
+  } finally {
+    stopWatching(agent);
+    await fh.close();
+  }
+}
+
+/** pull the newest tool_use out of a transcript tail */
+function lastToolUse(text) {
+  const lines = text.split('\n');
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const line = lines[i].trim();
+    if (!line || line[0] !== '{') continue;
+    let ev;
+    try { ev = JSON.parse(line); } catch { continue; }   // partial last line
+    if (ev.type !== 'assistant') continue;
+    const blocks = ev.message && Array.isArray(ev.message.content) ? ev.message.content : [];
+    for (let b = blocks.length - 1; b >= 0; b--) {
+      const blk = blocks[b];
+      if (blk && blk.type === 'tool_use') {
+        return { name: blk.name, input: blk.input, at: ev.timestamp };
+      }
+      if (blk && blk.type === 'thinking') {
+        return { name: '__thinking', input: null, at: ev.timestamp };
+      }
+    }
+  }
+  return null;
+}
+
+const WATCHING = new Map();   // agent id -> interval handle
+
+/** start reporting fine-grained activity for an agent while it is busy */
+function startWatching(agent) {
+  if (WATCHING.has(agent.id)) return;
+  let lastKey = '';
+  const tick = async () => {
+    if (!agent.busy) { stopWatching(agent); return; }
+    try {
+      const file = await findTranscript(agent);
+      if (!file) return;
+      const { text } = await tailBytes(file);
+      const use = lastToolUse(text);
+      if (!use) return;
+
+      const info = use.name === '__thinking'
+        ? { activity: 'thinking', verb: 'thinking' }
+        : toolToActivity(use.name);
+      const detail = use.name === '__thinking' ? '' : toolDetail(use.name, use.input);
+      const key = info.activity + '|' + detail;
+      if (key === lastKey) return;                 // nothing new to say
+      lastKey = key;
+
+      agent.activity = info.activity;
+      agent.activityText = detail ? info.verb + ' ' + detail : info.verb;
+      emit({ type: 'activity', agent: agent.id,
+             activity: agent.activity, text: agent.activityText });
+    } catch {
+      /* transcripts are an internal format; never let this break a run */
+    }
+  };
+  tick();
+  WATCHING.set(agent.id, setInterval(tick, 1200));
+}
+
+function stopWatching(agent) {
+  const h = WATCHING.get(agent.id);
+  if (h) { clearInterval(h); WATCHING.delete(agent.id); }
+  if (agent.activity) {
+    agent.activity = null;
+    agent.activityText = null;
+    emit({ type: 'activity', agent: agent.id, activity: null, text: null });
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* dispatch                                                            */
 /* ------------------------------------------------------------------ */
 async function dispatch(agent, prompt, threadId) {
@@ -505,6 +685,8 @@ async function dispatch(agent, prompt, threadId) {
   }
   agent.busy = true;
   setStatus(agent, 'working');
+  // CLI agents keep a transcript on disk, so we can report real tool activity
+  if (agent.kind === 'cli' && agent.cli && agent.cli.watchTranscript !== false) startWatching(agent);
   const t0 = Date.now();
   try {
     if (agent.kind === 'cli') await runCli(agent, prompt, threadId);
@@ -591,7 +773,7 @@ const server = createServer(async (req, res) => {
       ok: true,
       groups: OVR.groups,
       agents: CONFIG.agents.map(a => ({
-        id: a.id, name: a.name, role: a.role, kind: a.kind, seat: a.seat, floor: a.floor ?? 1,
+        id: a.id, name: a.name, role: a.role, kind: a.kind, activity: a.activity || null, activityText: a.activityText || null, seat: a.seat, floor: a.floor ?? 1,
         shirt: a.shirt, hair: a.hair, status: a.status, health: a.health, healthNote: a.healthNote,
         enabled: a.enabled !== false, hasSession: !!a.sessionId,
       })),

@@ -654,8 +654,22 @@ function chibi(x,y,a,t,facing){
 
   // body
   P(x+3,yy+11,10,7,a.shirt); P(x+3,yy+11,10,1,sh(a.shirt,22));
-  P(x+2,yy+12,2,5,sh(a.shirt,-18)); P(x+12,yy+12,2,5,sh(a.shirt,-18)); // arms
-  P(x+2,yy+16,2,2,sk); P(x+12,yy+16,2,2,sk);                            // hands
+  const act = a.activity;
+  if(act==='writing'||act==='running'){
+    // hands tapping a keyboard, offset out of phase so it reads as typing
+    const k1 = Math.floor(t/90)%2, k2 = Math.floor(t/90+1)%2;
+    P(x+2,yy+12,2,5,sh(a.shirt,-18)); P(x+12,yy+12,2,5,sh(a.shirt,-18));
+    P(x+2,yy+16+k1,2,2,sk); P(x+12,yy+16+k2,2,2,sk);
+  } else if(act==='reading'||act==='searching'){
+    // both arms forward, holding a page up
+    P(x+2,yy+12,2,4,sh(a.shirt,-18)); P(x+12,yy+12,2,4,sh(a.shirt,-18));
+    P(x+1,yy+15,3,2,sk); P(x+12,yy+15,3,2,sk);
+    P(x+2,yy+13,12,4,'#f4efe6'); P(x+2,yy+13,12,1,'#d8d2c4');
+    P(x+4,yy+15,3,1,'#b9b2a3'); P(x+9,yy+15,4,1,'#b9b2a3');
+  } else {
+    P(x+2,yy+12,2,5,sh(a.shirt,-18)); P(x+12,yy+12,2,5,sh(a.shirt,-18)); // arms
+    P(x+2,yy+16,2,2,sk); P(x+12,yy+16,2,2,sk);                            // hands
+  }
 
   // head — big and round, like the reference sheet
   P(x+2,yy+1,12,11,sk);
@@ -679,6 +693,23 @@ function chibi(x,y,a,t,facing){
   if(a.carrying){ g.save(); g.translate(x+13, yy+13); g.scale(.7,.7); product(0,0,a.carrying); g.restore(); }
   // status icon floating above
   icon(x+17, yy+1, a.status==='working' ? (a.moving?'coffee':'working') : a.status, t);
+
+  // live tool activity, in-world above the head, so you can read the room
+  // without opening the roster
+  if(a.activityText){
+    g.font='6px Silkscreen, monospace'; g.textAlign='center';
+    const label=a.activityText.length>16 ? a.activityText.slice(0,15)+'…' : a.activityText;
+    const w=g.measureText(label).width+6;
+    // neighbours sit shoulder to shoulder, so lift alternate labels to stop them colliding
+    const lift = (a.labelRow||0)*10;
+    const ly = yy-11-lift;
+    g.globalAlpha=.86; P(Math.round(x+8-w/2), ly, Math.round(w), 9, '#11161f'); g.globalAlpha=1;
+    P(Math.round(x+8-w/2), ly, Math.round(w), 1, '#2b3444');
+    g.fillStyle = a.activity==='writing'||a.activity==='running' ? '#7ee2a8'
+                : a.activity==='reading'||a.activity==='searching' ? '#8ec5e8'
+                : a.activity==='delegating' ? '#e0b06f' : '#c3ccd8';
+    g.fillText(label, x+8, ly+7);
+  }
 }
 
 /* ---------- activity + movement ---------- */
@@ -1264,6 +1295,15 @@ const SEATS={
        [11*T+4,13*T+10],[13*T+4,13*T+10],[15*T+4,13*T+10],[17*T+4,13*T+10],[19*T+4,13*T+10],
        ..._b(3,16,2)],
 };
+function labelRows(){
+  // agents sharing a row get alternating label heights
+  const byRow={};
+  for(const a of AGENTS){ const k=(a.floor||1)+':'+Math.round((a.deskY||0)/8); (byRow[k]||=[]).push(a); }
+  for(const k in byRow){
+    byRow[k].sort((p,q)=>(p.deskX||0)-(q.deskX||0));
+    byRow[k].forEach((a,i)=>{ a.labelRow = i%2; });
+  }
+}
 function seatAgents(){
   const used={1:0,2:0,3:0};
   for(const a of AGENTS){
@@ -1273,6 +1313,7 @@ function seatAgents(){
     if(a.x===undefined){ a.x=a.deskX; a.y=a.deskY; }
     a.seedB = a.seedB ?? Math.random()*6;
   }
+  labelRows();
 }
 async function loadAgents(){
   try{
@@ -1306,6 +1347,10 @@ function ingest(e){
   if(e.type==='status'){
     const a=AGENTS.find(x=>x.id===e.agent);
     if(a){ a.status=e.status; roster(); floorBtns(); if(PH_OPEN) renderPhone(); }
+  }
+  if(e.type==='activity'){
+    const a=AGENTS.find(x=>x.id===e.agent);
+    if(a){ a.activity=e.activity; a.activityText=e.text; roster(); if(PH_OPEN) renderPhone(); }
   }
   if(e.type==='meta'){
     const a=AGENTS.find(x=>x.id===e.agent);
@@ -1345,7 +1390,8 @@ function roster(){
     const f=a.floor||1;
     if(f!==lastF){ const h=document.createElement('div'); h.className='rfh'; h.textContent=f+'F'; el.appendChild(h); lastF=f; }
     const d=document.createElement('div'); d.className='rw';
-    const act = a.status==='working' ? 'at desk' : a.status==='idle' ? 'free' : a.status==='error' ? 'setup' : 'off';
+    const act = a.activityText ? a.activityText
+              : a.status==='working' ? 'at desk' : a.status==='idle' ? 'free' : a.status==='error' ? 'setup' : 'off';
     d.innerHTML=`<span class="rd" style="background:${SC[a.status]||'#5a6576'}"></span>${a.name}
       <span class="rwact">${act}</span>`;
     d.onclick=()=>{FLOOR=a.floor||1;floorBtns();openConv(a.id)};
