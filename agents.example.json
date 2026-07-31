@@ -197,119 +197,11 @@
       "_notes": "Needs no keys and no CLI. Talk to this one first to prove the office and the chat work end to end."
     },
     {
-      "id": "ranger",
-      "name": "RANGER",
-      "role": "Research",
-      "kind": "api",
-      "floor": 2,
-      "shirt": "#fbbf24",
-      "hair": "short",
-      "persona": "You are Ranger. You research and you are blunt about what you find. Lead with the verdict in one line, then the evidence with real sources. If something is a bad bet, say so plainly. Never pad.",
-      "api": {
-        "provider": "anthropic",
-        "model": "claude-sonnet-4-6",
-        "keyEnv": "ANTHROPIC_API_KEY",
-        "maxTokens": 1100
-      },
-      "enabled": false,
-      "_notes": "Off until an ANTHROPIC_API_KEY exists. Flip enabled to true then."
-    },
-    {
-      "id": "ledger",
-      "name": "LEDGER",
-      "role": "Money & pricing",
-      "kind": "api",
-      "floor": 2,
-      "shirt": "#34d399",
-      "hair": "fade",
-      "persona": "You are Ledger. Pricing, unit economics, payments. Always give a specific number, never a range unless the range is the answer. Jack is 13 with no payment method, so anything involving money routes through his dad Shay.",
-      "api": {
-        "provider": "anthropic",
-        "model": "claude-sonnet-4-6",
-        "keyEnv": "ANTHROPIC_API_KEY",
-        "maxTokens": 1100
-      },
-      "enabled": false,
-      "_notes": "Off until an ANTHROPIC_API_KEY exists. Flip enabled to true then."
-    },
-    {
-      "id": "pixel",
-      "name": "PIXEL",
-      "role": "Design",
-      "kind": "api",
-      "floor": 2,
-      "shirt": "#f472b6",
-      "hair": "pink",
-      "persona": "You are Pixel. Give exact values: hex codes, pixel sizes, spacing. Never mood boards, never vibes. Jack's real palette is #F4EFE6 paper, #1C1C1C ink, #3D6B2E green, #5B9AB8 blue, #C84B2F terracotta. Do not invent new colours.",
-      "api": {
-        "provider": "anthropic",
-        "model": "claude-sonnet-4-6",
-        "keyEnv": "ANTHROPIC_API_KEY",
-        "maxTokens": 1100
-      },
-      "enabled": false,
-      "_notes": "Off until an ANTHROPIC_API_KEY exists. Flip enabled to true then."
-    },
-    {
-      "id": "quill",
-      "name": "QUILL",
-      "role": "Copy",
-      "kind": "api",
-      "floor": 2,
-      "shirt": "#c084fc",
-      "hair": "long",
-      "persona": "You are Quill. You write in Jack's voice: 13, lowercase-leaning, specific, no hype, never the word startup, no em dashes. He hates inflated framing more than he hates plain writing.",
-      "api": {
-        "provider": "anthropic",
-        "model": "claude-sonnet-4-6",
-        "keyEnv": "ANTHROPIC_API_KEY",
-        "maxTokens": 1100
-      },
-      "enabled": false,
-      "_notes": "Off until an ANTHROPIC_API_KEY exists. Flip enabled to true then."
-    },
-    {
-      "id": "pulse",
-      "name": "PULSE",
-      "role": "Growth",
-      "kind": "api",
-      "floor": 3,
-      "shirt": "#22d3ee",
-      "hair": "mint",
-      "persona": "You are Pulse. Named channels and named tactics only, in order. No generic growth advice. Say which communities ban self-promo. Jack is 13 with a small following, so plans must be executable alone.",
-      "api": {
-        "provider": "anthropic",
-        "model": "claude-sonnet-4-6",
-        "keyEnv": "ANTHROPIC_API_KEY",
-        "maxTokens": 1100
-      },
-      "enabled": false,
-      "_notes": "Off until an ANTHROPIC_API_KEY exists. Flip enabled to true then."
-    },
-    {
-      "id": "aero",
-      "name": "AERO",
-      "role": "Reviewer",
-      "kind": "api",
-      "floor": 3,
-      "shirt": "#a78bfa",
-      "hair": "curly",
-      "persona": "You are Aero, the referee. When two agents disagree you pick one and defend it in three lines. You never split the difference to be diplomatic. You also flag what is missing before something can ship.",
-      "api": {
-        "provider": "anthropic",
-        "model": "claude-sonnet-4-6",
-        "keyEnv": "ANTHROPIC_API_KEY",
-        "maxTokens": 1100
-      },
-      "enabled": false,
-      "_notes": "Off until an ANTHROPIC_API_KEY exists. Flip enabled to true then."
-    },
-    {
       "id": "viktor",
       "name": "VIKTOR",
-      "role": "Slack agent · Ops",
+      "role": "Slack agent · Ops · via Slack",
       "kind": "slack",
-      "floor": 1,
+      "floor": 2,
       "shirt": "#38bdf8",
       "hair": "dark",
       "slack": {
@@ -320,14 +212,15 @@
         "pollMs": 4000,
         "timeoutMs": 180000
       },
-      "_notes": "Viktor has no API — this posts into #ai-team-hq and reads his threaded reply back. Currently out of credits, so he'll say so until that's resolved. Needs SLACK_TOKEN."
+      "_notes": "Viktor has no API — this posts into #ai-team-hq and reads his threaded reply back. Currently out of credits, so he'll say so until that's resolved. Needs SLACK_TOKEN.",
+      "enabled": true
     },
     {
       "id": "slack-claude",
-      "name": "CLAUDE (SLACK)",
-      "role": "Slack agent",
+      "name": "CLAUDE",
+      "role": "Slack agent · via Slack",
       "kind": "slack",
-      "floor": 1,
+      "floor": 2,
       "shirt": "#c084fc",
       "hair": "fade",
       "slack": {
@@ -338,12 +231,13 @@
         "pollMs": 4000,
         "timeoutMs": 180000
       },
-      "_notes": "Same trick as Viktor: no API, so this talks to the Claude Slack app in #ai-team-hq and reads the thread reply. Needs SLACK_TOKEN."
+      "_notes": "Same trick as Viktor: no API, so this talks to the Claude Slack app in #ai-team-hq and reads the thread reply. Needs SLACK_TOKEN.",
+      "enabled": true
     },
     {
       "id": "slack-ranger",
-      "name": "RANGER (SLACK)",
-      "role": "Research · Relevance AI",
+      "name": "RANGER",
+      "role": "Research · Relevance AI · via Slack",
       "kind": "slack",
       "floor": 2,
       "shirt": "#fbbf24",
@@ -356,12 +250,13 @@
         "pollMs": 4000,
         "timeoutMs": 180000
       },
-      "_notes": "Relevance AI sub-agent, routed by the 'ranger' keyword right after the mention. Distinct id/name from the API-based 'ranger' agent above so they don't collide. Needs SLACK_TOKEN."
+      "_notes": "Relevance AI sub-agent, routed by the 'ranger' keyword right after the mention. Distinct id/name from the API-based 'ranger' agent above so they don't collide. Needs SLACK_TOKEN.",
+      "enabled": true
     },
     {
       "id": "slack-ledger",
-      "name": "LEDGER (SLACK)",
-      "role": "Money · Relevance AI",
+      "name": "LEDGER",
+      "role": "Money · Relevance AI · via Slack",
       "kind": "slack",
       "floor": 2,
       "shirt": "#34d399",
@@ -374,14 +269,15 @@
         "pollMs": 4000,
         "timeoutMs": 180000
       },
-      "_notes": "Relevance AI sub-agent, routed by the 'ledger' keyword. Needs SLACK_TOKEN."
+      "_notes": "Relevance AI sub-agent, routed by the 'ledger' keyword. Needs SLACK_TOKEN.",
+      "enabled": true
     },
     {
       "id": "slack-pixel",
-      "name": "PIXEL (SLACK)",
-      "role": "Design · Relevance AI",
+      "name": "PIXEL",
+      "role": "Design · Relevance AI · via Slack",
       "kind": "slack",
-      "floor": 2,
+      "floor": 3,
       "shirt": "#f472b6",
       "hair": "pink",
       "slack": {
@@ -392,12 +288,13 @@
         "pollMs": 4000,
         "timeoutMs": 180000
       },
-      "_notes": "Relevance AI sub-agent, routed by the 'pixel' keyword. Needs SLACK_TOKEN."
+      "_notes": "Relevance AI sub-agent, routed by the 'pixel' keyword. Needs SLACK_TOKEN.",
+      "enabled": true
     },
     {
       "id": "slack-quill",
-      "name": "QUILL (SLACK)",
-      "role": "Copy · Relevance AI",
+      "name": "QUILL",
+      "role": "Copy · Relevance AI · via Slack",
       "kind": "slack",
       "floor": 3,
       "shirt": "#c084fc",
@@ -410,12 +307,13 @@
         "pollMs": 4000,
         "timeoutMs": 180000
       },
-      "_notes": "Relevance AI sub-agent, routed by the 'quill' keyword. Needs SLACK_TOKEN."
+      "_notes": "Relevance AI sub-agent, routed by the 'quill' keyword. Needs SLACK_TOKEN.",
+      "enabled": true
     },
     {
       "id": "slack-pulse",
-      "name": "PULSE (SLACK)",
-      "role": "Growth · Relevance AI",
+      "name": "PULSE",
+      "role": "Growth · Relevance AI · via Slack",
       "kind": "slack",
       "floor": 3,
       "shirt": "#22d3ee",
@@ -428,12 +326,13 @@
         "pollMs": 4000,
         "timeoutMs": 180000
       },
-      "_notes": "Relevance AI sub-agent, routed by the 'pulse' keyword. Needs SLACK_TOKEN."
+      "_notes": "Relevance AI sub-agent, routed by the 'pulse' keyword. Needs SLACK_TOKEN.",
+      "enabled": true
     },
     {
       "id": "slack-aero",
-      "name": "AERO (SLACK)",
-      "role": "Reviewer · Relevance AI",
+      "name": "AERO",
+      "role": "Reviewer · Relevance AI · via Slack",
       "kind": "slack",
       "floor": 3,
       "shirt": "#a78bfa",
@@ -446,7 +345,19 @@
         "pollMs": 4000,
         "timeoutMs": 180000
       },
-      "_notes": "Relevance AI sub-agent, routed by the 'aero' keyword. Needs SLACK_TOKEN."
+      "_notes": "Relevance AI sub-agent, routed by the 'aero' keyword. Needs SLACK_TOKEN.",
+      "enabled": true
     }
-  ]
+  ],
+  "retired": {
+    "ids": [
+      "ranger",
+      "ledger",
+      "pixel",
+      "quill",
+      "pulse",
+      "aero"
+    ],
+    "why": "These were API duplicates of the real Slack agents. The Slack ones are the real thing."
+  }
 }

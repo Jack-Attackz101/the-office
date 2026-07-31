@@ -255,7 +255,7 @@ const FLOORS=[
 FLOORS[1].accent='#a2793f';
 let FLOOR=1, hover=null, connected=false, AGENTS=[];
 const TAKEN={ drinks:new Set(), snacks:new Set() };   // emptied slots per machine
-const VEND={ drinks:{x:26*T,y:3*T}, snacks:{x:31*T,y:3*T} };  // both on 2F
+const VEND={ drinks:{x:25*T,y:3*T}, snacks:{x:30*T,y:3*T} };  // both on 2F
 setInterval(()=>{ // restock slowly, so the machines don't stay empty forever
   for(const k of ['drinks','snacks']){
     const s=TAKEN[k]; if(!s.size) continue;
@@ -573,7 +573,7 @@ function product(x, y, it) {
 function vending(x, y, kind, taken, t) {
   const items = kind === 'drinks' ? DRINKS : SNACKS;
   const body = kind === 'drinks' ? '#c8452f' : '#3f6f9c';
-  const W = 4 * T, H = 4 * T;
+  const W = 4 * T, H = 6 * T;
   shadow(x, y, W, H);
   // cabinet
   P(x, y, W, H, body); P(x, y, W, 3, sh(body, 26)); P(x, y + H - 3, W, 3, sh(body, -30));
@@ -585,18 +585,18 @@ function vending(x, y, kind, taken, t) {
   g.fillStyle = '#f7f2e8';
   g.fillText(kind === 'drinks' ? 'DRINKS' : 'SNACKS', x + W / 2, y + 9);
   // glass front
-  P(x + 3, y + 12, W - 20, H - 22, '#1d232c');
-  P(x + 4, y + 13, W - 22, H - 24, '#e9eef4');
+  P(x + 3, y + 12, W - 20, H - 34, '#1d232c');
+  P(x + 4, y + 13, W - 22, H - 36, '#e9eef4');
   // 4 x 4 grid of products behind the glass
   for (let r = 0; r < 4; r++) {
     for (let c = 0; c < 4; c++) {
       const i = r * 4 + c;
-      P(x + 5, y + 27 + r * 14, W - 24, 1, '#c4cbd4');          // shelf
+      P(x + 5, y + 28 + r * 15, W - 24, 1, '#c4cbd4');          // shelf
       if (taken.has(i)) continue;
-      product(x + 6 + c * 10, y + 15 + r * 14, items[i]);
+      product(x + 6 + c * 10, y + 14 + r * 15, items[i]);
     }
   }
-  g.globalAlpha = .14; P(x + 4, y + 13, W - 22, H - 24, '#ffffff'); g.globalAlpha = 1;  // glass sheen
+  g.globalAlpha = .14; P(x + 4, y + 13, W - 22, H - 36, '#ffffff'); g.globalAlpha = 1;  // glass sheen
   // keypad, coin slot, delivery flap
   P(x + W - 15, y + 14, 12, 18, sh(body, -22));
   for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++)
@@ -606,7 +606,7 @@ function vending(x, y, kind, taken, t) {
   P(x + 5, y + H - 11, W - 22, 6, sh(body, -34));
   // a soft glow so it reads as powered
   g.globalAlpha = .10 + .04 * Math.sin(t / 700);
-  P(x + 3, y + 12, W - 20, H - 22, '#ffe9a8'); g.globalAlpha = 1;
+  P(x + 3, y + 12, W - 20, H - 34, '#ffe9a8'); g.globalAlpha = 1;
 }
 
 /* ---------- status icons above heads (pixel-icon style) ---------- */
@@ -676,7 +676,7 @@ function chibi(x,y,a,t,facing){
   // blush
   g.globalAlpha=.35; P(x+3,yy+8,2,2,'#e8896f'); P(x+11,yy+8,2,2,'#e8896f'); g.globalAlpha=1;
 
-  if(a.carrying) product(x+16, yy+8, a.carrying);   // whatever they grabbed
+  if(a.carrying){ g.save(); g.translate(x+13, yy+13); g.scale(.7,.7); product(0,0,a.carrying); g.restore(); }
   // status icon floating above
   icon(x+17, yy+1, a.status==='working' ? (a.moving?'coffee':'working') : a.status, t);
 }
@@ -709,9 +709,9 @@ function maybeErrand(a,t){
   if(!free.length) return;
   const slot = free[Math.floor(Math.random()*free.length)];
   const m = VEND[kind];
-  a.errand = { kind, slot, phase:'go', to:{x:m.x+T, y:m.y+4*T+4}, homeFloor:a.floor||1 };
+  a.errand = { kind, slot, phase:'go', to:{x:m.x+T, y:m.y+6*T+6}, homeFloor:a.floor||1 };
   a.floor = 2;                       // the machines are on 2F, so they head upstairs
-  a.x = 19*T+8; a.y = 17*T;          // arrive at the 2F stairwell
+  a.x = 20*T+8; a.y = 17*T;          // arrive at the 2F stairwell
 }
 function stepAgent(a,dt,t){
   if(a.held) return;                       // you're carrying them
@@ -729,7 +729,7 @@ function stepAgent(a,dt,t){
         TAKEN[a.errand.kind].add(a.errand.slot);     // actually remove the item
         a.carrying = a.errand.kind==='drinks' ? DRINKS[a.errand.slot] : SNACKS[a.errand.slot];
         a.errand.phase='back';
-        a.errand.to={x:19*T+8,y:17*T};
+        a.errand.to={x:20*T+8,y:17*T};
       } else if(a.errand.phase==='back'){
         a.floor=a.errand.homeFloor;                  // back down the stairs
         a.x=a.deskX; a.y=a.deskY; a.errand=null;
@@ -810,21 +810,38 @@ function drawFloor(t){
   }
   if(FLOOR===2){
     windowT(3*T,2,7); windowT(20*T,2,6);
-    stairs(19*T,15*T);
-    // the two vending machines, drawn from Jack's pins
-    vending(VEND.drinks.x,VEND.drinks.y,'drinks',TAKEN.drinks,t);
-    vending(VEND.snacks.x,VEND.snacks.y,'snacks',TAKEN.snacks,t);
+    // desks, left and middle
     bench(4*T,6*T,3,'#b07fd3',true,t); bench(15*T,6*T,3,'#7fd3c0',true,t);
     bench(4*T,10*T,3,'#d3b07f',true,t); bench(15*T,10*T,3,'#7f9fd3',true,t);
-    rug(5*T,15*T,13,6,'#a8825c','#9c7852');
-    sofa(6*T,17*T,'#7a5a86'); sofa(13*T,17*T,'#5a7a86'); bigTable(10*T,20*T,3,2);
-    counter(28*T,2*T,4); fridge(33*T,2*T); cooler(27*T,6*T);
-    plant(25*T,4*T,1); plant(2*T,20*T,2); plant(34*T,17*T,0); plant(20*T,10*T,1);
-    box(30*T,18*T); bottle(29*T,3*T); cabinet(35*T,8*T); printer(30*T,10*T);
+    bookshelf(2*T,14*T); bookshelf(2*T,17*T);
     whiteboard(5*T,24); tvBoard(22*T,24);
-    bookshelf(2*T,8*T); bookshelf(2*T,11*T); lamp(19*T,15*T); lamp(11*T,20*T);
-    sofa(20*T,18*T,'#86755a'); bigTable(24*T,18*T,2,2); plant(27*T,20*T,0);
-    rug(19*T,13*T,6,3,'#a8825c','#9c7852');
+    // lounge, kept well clear of the stairwell
+    rug(4*T,15*T,13,6,'#a8825c','#9c7852');
+    sofa(5*T,17*T,'#7a5a86'); sofa(13*T,17*T,'#5a7a86'); bigTable(9*T,20*T,3,2);
+    lamp(3*T,20*T); plant(18*T,20*T,2);
+    // stairwell, nothing else allowed in this column
+    stairs(20*T,15*T);
+    // break room: a real room with its own floor and partition, so the
+    // machines and kitchen read as one place instead of props on open floor
+    (function breakRoom(){
+      const bx=23*T, by=1*T, bw=14*T, bh=22*T;
+      for(let ty=0;ty<bh/T;ty++) for(let tx=0;tx<bw/T;tx++){
+        const c=((tx+ty)&1)?'#dcd3c4':'#d3cabb';
+        P(bx+tx*T, by+ty*T, T, T, c);
+        P(bx+tx*T, by+ty*T, T, 1, sh(c,7)); P(bx+tx*T, by+ty*T+T-1, T, 1, sh(c,-9));
+      }
+      P(bx-3,by,3,bh,'#8f8878'); P(bx-4,by,1,bh,OUT); P(bx,by,1,bh,'#a39b8a');
+      g.font='6px Silkscreen, monospace'; g.textAlign='left'; g.fillStyle='#7a7263';
+      g.fillText('BREAK ROOM', bx+6, by+bh-6);
+    })();
+    // the two machines from Jack's pins, side by side against the wall
+    vending(25*T,3*T,'drinks',TAKEN.drinks,t);
+    vending(30*T,3*T,'snacks',TAKEN.snacks,t);
+    counter(25*T,11*T,5); fridge(31*T,11*T); cooler(34*T,11*T);
+    rug(25*T,15*T,10,6,'#9c8f7a','#93866f');
+    bigTable(27*T,17*T,3,2); sofa(25*T,15*T,'#86755a'); sofa(32*T,15*T,'#6f7a86');
+    plant(24*T,2*T,1); plant(35*T,2*T,0); plant(35*T,20*T,2); plant(24*T,20*T,1);
+    cabinet(35*T,7*T); bottle(29*T,10*T);
   }
   if(FLOOR===3){
     windowT(24*T,2,8);

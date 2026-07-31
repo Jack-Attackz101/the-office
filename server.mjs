@@ -62,6 +62,18 @@ async function loadConfig() {
     }
   }
 
+  // Drop agents that have been retired upstream, so old duplicates don't
+  // linger in an agents.json that was created before they were removed.
+  if (example && example.retired && Array.isArray(example.retired.ids)) {
+    const kill = new Set(example.retired.ids);
+    const gone = CONFIG.agents.filter(a => kill.has(a.id)).map(a => a.name);
+    if (gone.length) {
+      CONFIG.agents = CONFIG.agents.filter(a => !kill.has(a.id));
+      await writeFile(p, JSON.stringify(CONFIG, null, 2) + '\n');
+      console.log('  removed ' + gone.length + ' retired duplicate(s): ' + gone.join(', '));
+    }
+  }
+
   for (const a of CONFIG.agents) {
     a.status = a.enabled === false ? 'off' : 'idle';
     a.lastSeen = null;
@@ -382,12 +394,113 @@ async function runAside(agent, prompt, threadId) {
 }
 
 /* ------------------------------------------------------------------ */
+/**
+ * Viktor and the Relevance AI sub-agents have no HTTP API. They do,
+ * however, answer when mentioned in a Slack channel. So this adapter
+ * fakes an API the way a human would use one: post a message that
+ * @-mentions the bot (plus a keyword, for the Relevance sub-agents which
+ * all share one Slack app and route by the word right after the mention),
+ * then poll the *thread* under that message, because these bots reply in
+ * a thread on the message they were mentioned in, not in the channel.
+ * conversations.history alone would never see that reply.
+ */
+const SLACK_SELF_USER = process.env.SLACK_SELF_USER || 'U0BFJPL481F'; // Jack — his own thread messages are never a "reply"
+
+async function slackApi(token, method, params) {
+  // conversations.* reads are GET + query string; everything we call to write is POST + JSON.
+  const isRead = method === 'conversations.history' || method === 'conversations.replies';
+  let res;
+  if (isRead) {
+    const qs = new URLSearchParams(params).toString();
+    res = await fetch(`https://slack.com/api/${method}?${qs}`, {
+      headers: { authorization: `Bearer ${token}` },
+    });
+  } else {
+    res = await fetch(`https://slack.com/api/${method}`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json; charset=utf-8' },
+      body: JSON.stringify(params || {}),
+    });
+  }
+  return res.json();
+}
+
+/** Bots often post a placeholder ("Status: Inactive · View Task…") before the real answer. Hide that noise. */
+function isSlackStub(t) {
+  const s = (t || '').trim();
+  if (s.length >= 40) return false;
+  return /status:/i.test(s) || /view task/i.test(s) || /want to message the agent/i.test(s);
+}
+
+async function runSlack(agent, prompt, threadId) {
+  const cfg = agent.slack;
+  const token = process.env[cfg.tokenEnv];
+  if (!token) {
+    emit({ type: 'msg', agent: agent.id, thread: threadId, role: 'system',
+           text: `No Slack token. Set ${cfg.tokenEnv} in your environment and restart.` });
+    setStatus(agent, 'error', `${cfg.tokenEnv} not set`);
+    return;
+  }
+
+  const text = `<@${cfg.mention}> ${cfg.keyword ? `${cfg.keyword} ` : ''}${prompt}`;
+  const posted = await slackApi(token, 'chat.postMessage', { channel: cfg.channel, text });
+  if (!posted.ok) {
+    emit({ type: 'msg', agent: agent.id, thread: threadId, role: 'system', text: `Slack post failed: ${posted.error}` });
+    setStatus(agent, 'error', posted.error);
+    return;
+  }
+  const parentTs = posted.ts;
+
+  // Why polling only this thread's ts is enough even with several Relevance
+  // sub-agents in flight at once: each call to runSlack posts its own parent
+  // message and gets back its own ts. conversations.replies is scoped to one
+  // parent ts, so this poll can only ever see replies nested under *this*
+  // message — a reply landing on someone else's parallel thread is a
+  // different ts and never shows up here. No cross-agent mixing is possible.
+  const emitted = new Set(); // ts values already shown in the chat — never emit the same reply twice
+  const start = Date.now();
+  let gotRealReply = false;
+
+  while (Date.now() - start < cfg.timeoutMs) {
+    await new Promise(r => setTimeout(r, cfg.pollMs));
+    const rep = await slackApi(token, 'conversations.replies', { channel: cfg.channel, ts: parentTs, limit: 50 });
+    if (!rep.ok) continue; // transient error — try again next poll
+
+    for (const m of rep.messages || []) {
+      if (m.ts === parentTs) continue;           // our own outgoing message
+      if (m.user === SLACK_SELF_USER) continue;   // Jack posting in the thread isn't a reply
+      if (emitted.has(m.ts)) continue;            // already shown
+      if (isSlackStub(m.text)) continue;          // stub placeholder — don't mark as seen, it may be edited into the real answer
+
+      emitted.add(m.ts);
+      gotRealReply = true;
+      emit({ type: 'msg', agent: agent.id, thread: threadId, role: 'agent', text: m.text });
+    }
+
+    if (gotRealReply) break; // got the real answer, stop polling this thread
+  }
+
+  if (!gotRealReply) {
+    emit({ type: 'msg', agent: agent.id, thread: threadId, role: 'system',
+           text: `No reply in the Slack thread after ${(cfg.timeoutMs / 1000).toFixed(0)}s. Check the app is invited to the channel, and that it isn't out of credits.` });
+    setStatus(agent, 'error', 'Slack timeout');
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* dispatch                                                            */
 /* ------------------------------------------------------------------ */
 async function dispatch(agent, prompt, threadId) {
   if (agent.enabled === false) {
     emit({ type: 'msg', agent: agent.id, thread: threadId, role: 'system',
-           text: 'This agent is switched off in agents.json.' });
+           text: 'This one is off. Set "enabled": true for ' + agent.id + ' in agents.json' +
+                 (agent.kind === 'api' ? ', and it needs an API key.' : '.') });
+    return;
+  }
+  if (agent.kind === 'slack' && !process.env.SLACK_TOKEN) {
+    emit({ type: 'msg', agent: agent.id, thread: threadId, role: 'system',
+           text: 'I reach ' + agent.name + ' through Slack, so I need a token. ' +
+                 'Run: export SLACK_TOKEN=xoxb-... then restart the server.' });
     return;
   }
   agent.busy = true;
@@ -397,10 +510,15 @@ async function dispatch(agent, prompt, threadId) {
     if (agent.kind === 'cli') await runCli(agent, prompt, threadId);
     else if (agent.kind === 'api') await runApi(agent, prompt, threadId);
     else if (agent.kind === 'aside') await runAside(agent, prompt, threadId);
-    else {
+    else if (agent.kind === 'slack') await runSlack(agent, prompt, threadId);
+    else if (agent.kind === 'echo') {
       await new Promise(r => setTimeout(r, 600));
       emit({ type: 'msg', agent: agent.id, thread: threadId, role: 'agent',
              text: `(echo) ${prompt}` });
+    }
+    else {
+      emit({ type: 'msg', agent: agent.id, thread: threadId, role: 'system',
+             text: `I do not know how to run kind "${agent.kind}". Check agents.json.` });
     }
   } finally {
     agent.busy = false;
